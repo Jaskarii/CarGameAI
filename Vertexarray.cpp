@@ -1,4 +1,5 @@
 #include "Vertexarray.h"
+#include "VertexBufferLayout.h"
 #include "Renderer.h"
 
 Vertexarray::Vertexarray()
@@ -21,7 +22,7 @@ void Vertexarray::AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& la
 	for (unsigned int i = 0; i < elements.size(); i++)
 	{
 		const auto& element = elements[i];
-		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(i);
 		glVertexAttribPointer(i, element.count, element.type, element.normalized, layout.GetStride(), (const void*)offset);
 		offset += element.count * VertexBufferElement::GetSizeOfType(element.type);
 	}

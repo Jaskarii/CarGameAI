@@ -6,9 +6,12 @@
 #include<sstream>
 #include <assert.h>
 #include "VertexBuffer.h"
+#include"VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "Vertexarray.h"
 #include "Shader.h"
+#include"Renderer.h"
+#include"Texture.h"
 
 int main()
 {
@@ -33,10 +36,10 @@ int main()
 
 	float positions[] =
 	{
-		-0.5f,-0.5f,
-		0.5f,-0.5f,
-		0.5f,0.5f,
-		-0.5f,0.5f,
+		-0.5f,-0.5f, 0.0f, 0.0f,
+		0.5f,-0.5f, 1.0f, 0.0f,
+		0.5f,0.5f, 1.0f, 1.0f,
+		-0.5f,0.5f, 0.0f, 1.0f
 	};
 
 	unsigned int indices[] =
@@ -45,38 +48,46 @@ int main()
 		2,3,0
 	};
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	Vertexarray va;
 	//Create buffer and bind it.
-	VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+	VertexBuffer vb(positions, 4 * 4 * sizeof(float));
 
 	VertexBufferLayout layout;
+	layout.Push<float>(2);
 	layout.Push<float>(2);
 	va.AddBuffer(vb, layout);
 
 	IndexBuffer ib(indices, 6);
 
-	Shader shader("basic.shader");
+	Shader shader("Basic.shader");
 	shader.Bind();
-	shader.SetUniform4f("u_color", 0.3f, 0.8f, 1.0f, 1.f);
+	//shader.SetUniform4f("u_color", 0.3f, 0.8f, 1.0f, 1.f);
+
+	Texture texture("R.png");
+	texture.Bind();
+	shader.Bind();
+	shader.SetUniform1i("u_Texture", 0);
+
 
 	va.UnBind();
 	shader.UnBind();
 	vb.UnBind();
 	ib.UnBind();
+
+	Renderer renderer;
+
 	float r = 0.0f;
 	float increment = 0.01f;
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
+		renderer.Clear();
+		//shader.SetUniform4f("u_color", r, 0.8f, 1.0f, 1.f);
 
-		shader.Bind();
-		shader.SetUniform4f("u_color", r, 0.8f, 1.0f, 1.f);
-
-		va.Bind();
-		ib.Bind();
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		renderer.Draw(va, ib, shader);
 
 		if (r > 1.0f)
 		{
