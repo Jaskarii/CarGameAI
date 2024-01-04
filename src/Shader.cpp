@@ -9,7 +9,7 @@
 Shader::Shader(const std::string& filepath)
 {
 	ShaderProgramSource source = ParseShader(filepath);
-	m_RendererId = CreateShader(source.VertexSource, source.FragmentSource);
+	m_RendererId = CreateShader(source.VertexSource, source.GeometrySource, source.FragmentSource);
 }
 
 Shader::~Shader()
@@ -35,6 +35,11 @@ void Shader::SetUniform1i(const std::string& name, int value)
 void Shader::SetUniform1f(const std::string& name, float value)
 {
 	glUniform1f(GetUniformLocation(name), value);
+}
+
+void Shader::SetUniform2f(const std::string& name, float value1, float value2)
+{
+	glUniform2f(GetUniformLocation(name), value1, value2);
 }
 
 void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
@@ -88,11 +93,11 @@ ShaderProgramSource Shader::ParseShader(const std::string& file)
 
 	enum class ShaderType
 	{
-		NONE = -1, VERTEX = 0, FRAGMENT = 1
+		NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2
 	};
 
 	std::string line;
-	std::stringstream ss[2];
+	std::stringstream ss[3];
 
 	ShaderType type = ShaderType::NONE;
 	while (getline(stream, line))
@@ -107,23 +112,36 @@ ShaderProgramSource Shader::ParseShader(const std::string& file)
 			{
 				type = ShaderType::FRAGMENT;
 			}
+			else if (line.find("geometry") != std::string::npos)
+			{
+				type = ShaderType::GEOMETRY;
+			}
 		}
 		else
 		{
 			ss[(int)type] << line << '\n';
 		}
 	}
-	return { ss[0].str(), ss[1].str() };
+	return { ss[0].str(), ss[1].str(),ss[2].str() };
 }
 
-unsigned int Shader::CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+unsigned int Shader::CreateShader(const std::string& vertexShader,const std::string& geometryShader, const std::string& fragmentShader)
 {
 	unsigned int program = glCreateProgram();
 	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
 	unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+	if (!geometryShader.empty())
+	{
+		unsigned int gs = CompileShader(GL_GEOMETRY_SHADER, geometryShader);
+		glAttachShader(program, gs);
+		glDeleteShader(gs);
+	}
+	
+
 
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
+
 	glLinkProgram(program);
 	glValidateProgram(program);
 

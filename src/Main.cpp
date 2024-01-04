@@ -12,6 +12,8 @@
 #include "Shader.h"
 #include"Renderer.h"
 #include"Texture.h"
+#include "Road.h"
+#include "Car.h"
 
 void checkGLError() 
 {
@@ -19,6 +21,11 @@ void checkGLError()
     while ((err = glGetError()) != GL_NO_ERROR) {
         std::cerr << "OpenGL error in " << std::endl;
     }
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) 
+{
+    glViewport(0, 0, width, height);
 }
 
 int main()
@@ -45,23 +52,14 @@ int main()
 	gladLoadGL();
 
 	// Check for framebuffer size and set the viewport
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	int windowWidth, windowHeight;
 	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 	glViewport(0, 0, windowWidth, windowHeight);
 
-
-	float positions[] =
-	{
-		0.5f,0.5f,
-		0.8f,0.8f,
-		-0.2f,0.4f,
-	};
-
-	unsigned int indices[] =
-	{
-		0,1,2
-	};
-
+	Road road;
+	Car car;
+	
 	
 	Renderer renderer;
 
@@ -70,7 +68,8 @@ int main()
 		checkGLError();
 		renderer.Clear();
 		//shader.SetUniform4f("u_color", r, 0.8f, 1.0f, 1.f);
-
+		road.Render();
+		car.Render(window);
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();

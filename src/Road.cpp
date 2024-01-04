@@ -4,24 +4,26 @@ Road::Road()
 {
     float positions[] =
 	{
-		0.5f,0.5f,
-		0.8f,0.8f,
-		-0.2f,0.8f,
+		0.0f,-0.7f,
+		-0.7f,-0.7f,
+		-0.7f,0.7f,
+		0.9f,0.7f,
+		0.9f,-0.7f,
 	};
 
 	unsigned int indices[] =
 	{
-		0,1,2
+		0,1,1,2,2,3,3,4,4,0
 	};
 
-	//Create buffer and bind it.
-	VertexBuffer vb(positions, 2 * 3*sizeof(float));
-	vb.UnBind();
-	layout.PushFloat(2);
+	vbo = new VertexBuffer(positions, 3*2*sizeof(float));
+	ibo = new IndexBuffer(indices, 10);
+	shader = new Shader("shaders/Road.shader");
 
-	va.AddBuffer(vb, layout);
-    ibo = IndexBuffer(indices, 3);
-	ibo.UnBind();
+	va = new Vertexarray();
+	VertexBufferLayout layout;
+	layout.PushFloat(2);
+	va->AddBuffer(*vbo, layout);
 }
 
 Road::~Road()
@@ -30,5 +32,16 @@ Road::~Road()
 
 void Road::Render()
 {
+	va->Bind();
+	ibo->Bind();
+	shader->Bind();
+	shader->SetUniform1f("Width", 0.1);
+	shader->SetUniform1f("Alpha", 0.9);
 
+	glDrawElements(GL_LINES, ibo->GetCount(), GL_UNSIGNED_INT, nullptr);
+}
+
+bool Road::IsOffRoad(Car *car)
+{
+    return false;
 }

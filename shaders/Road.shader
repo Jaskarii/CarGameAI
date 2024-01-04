@@ -4,7 +4,6 @@ layout(location = 0) in vec2 vPosition;
 
 void main()
 {
-    
     gl_Position = vec4(vPosition.x, vPosition.y, 0.0, 1.0);
 }
 
@@ -17,8 +16,6 @@ out vec2 fVertexPos; // interpolated model-space position of vertices of triangl
 flat out vec2 Cpos;
 out vec2 centerLine;
 flat out int isEndRect;
-
-uniform mat4 MVP;
 uniform float Width;
 
 
@@ -30,7 +27,7 @@ vec4 rotate90CW(vec4 v)
 void emitVertex(vec4 pos)
 {
     fVertexPos = pos.xy;
-    gl_Position = MVP * pos;
+    gl_Position = pos;
     EmitVertex();
 }
 
@@ -84,7 +81,6 @@ in vec2 fVertexPos; // interpolated model-space position of vertices of triangle
 flat in vec2 Cpos; 
 in vec2 centerLine;
 flat in int isEndRect;
-uniform vec3 Color;
 uniform float Width;
 uniform float Alpha;
 
@@ -94,15 +90,15 @@ void main()
     if (isEndRect == 1)
     {
         float d = distance(Cpos, fVertexPos);
-        a *= smoothstep(Width, Width - 0.03, d);
+        a *= smoothstep(Width, Width - 0.1, d);
     }
     else
     {
         float Clength = length(centerLine);
         vec2 Cnorm = normalize(centerLine);
         vec2 perpCnormed = vec2(Cnorm.y, -Cnorm.x);
-        vec2 p13 = fVertexPos - Cpos
-        float distanceFromLine = abs(dot(perpCnormed, p13))
+        vec2 p13 = fVertexPos - Cpos;
+        float distanceFromLine = abs(dot(perpCnormed, p13));
         a *= smoothstep(Width, Width - 0.1, distanceFromLine);
     }
 
@@ -110,6 +106,5 @@ void main()
     {
         discard;
     }
-    vFragColor = vec4(Color, a);
-
+    vFragColor = vec4(1,1,0, a);
 }
