@@ -2,23 +2,12 @@
 
 Road::Road()
 {
-    float positions[] =
-	{
-		0.0f,-0.7f,
-		-0.7f,-0.7f,
-		-0.7f,0.7f,
-		0.9f,0.7f,
-		0.9f,-0.7f,
-	};
+	positions = new float[100];
+	indices = new unsigned int[100];
 
-	unsigned int indices[] =
-	{
-		0,1,1,2,2,3,3,4,4,0
-	};
-
-	vbo = new VertexBuffer(positions, 3*2*sizeof(float));
-	ibo = new IndexBuffer(indices, 10);
-	shader = new Shader("shaders/Road.shader");
+	vbo = new VertexBuffer(positions, 100 * sizeof(float));
+	ibo = new IndexBuffer(indices, 100);
+	shader = new Shader("../shaders/Road.glsl");
 
 	va = new Vertexarray();
 	VertexBufferLayout layout;
@@ -30,18 +19,49 @@ Road::~Road()
 {
 }
 
-void Road::Render()
+void Road::Render(GLFWwindow *window)
 {
 	va->Bind();
 	ibo->Bind();
 	shader->Bind();
-	shader->SetUniform1f("Width", 0.1);
-	shader->SetUniform1f("Alpha", 0.9);
-
-	glDrawElements(GL_LINES, ibo->GetCount(), GL_UNSIGNED_INT, nullptr);
+	shader->SetUniform1f("Width", 0.07f);
+	shader->SetUniform1f("Alpha", 0.9f);
+	if (indicesCount > 1)
+	{
+		glDrawElements(GL_LINES, indicesCount, GL_UNSIGNED_INT, nullptr);
+	}
 }
 
-bool Road::IsOffRoad(Car *car)
+bool Road::IsOffRoad(Vector2 position)
 {
-    return false;
+	return false;
+}
+
+void Road::SetNewPath(float xPos, float yPos)
+{
+	vbo->Bind();
+	ibo->Bind();
+
+	// Update positions
+	positions[positionCount] = xPos;
+	positions[positionCount + 1] = yPos;
+	positionCount += 2; // Increment by the size of one position (x and y)
+
+	// Update position buffer data
+	glBufferSubData(GL_ARRAY_BUFFER, 0, positionCount * sizeof(float), positions);
+
+	int prevElementCount = indicesCount;
+	// Update indices
+	if (vertexCount > 1)
+	{
+		indices[indicesCount] = vertexCount - 1; // Assuming 0-based index
+		indicesCount++;
+	}
+
+	indices[indicesCount] = vertexCount;
+	indicesCount++;
+
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesCount * sizeof(unsigned int), indices);
+
+	vertexCount++;
 }

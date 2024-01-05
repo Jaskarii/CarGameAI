@@ -1,15 +1,18 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 #include <cmath>
 
-struct Vector2 
+struct Vector2
 {
     float x;
     float y;
-    
+
     Vector2(float _x, float _y) : x(_x), y(_y) {}
-    
+
     // You can also add other member functions like vector operations
     // For example, adding two Vector2 objects:
-    Vector2 operator+(const Vector2& other) const 
+    Vector2 operator+(const Vector2 &other) const
     {
         return Vector2(x + other.x, y + other.y);
     }
@@ -22,3 +25,4 @@ struct Vector2
         return distance;
     }
 };
+#endif
