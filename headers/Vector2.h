@@ -1,28 +1,36 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtx/norm.hpp> // For glm::length2
 
-struct Vector2
+static float DistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B)
 {
-    float x;
-    float y;
+    glm::vec2 AP = P - A, AB = B - A;
+    float AB_squared = glm::length2(AB); // Squared length of AB
 
-    Vector2(float _x, float _y) : x(_x), y(_y) {}
-
-    // You can also add other member functions like vector operations
-    // For example, adding two Vector2 objects:
-    Vector2 operator+(const Vector2 &other) const
+    // Handle the case where A and B are the same point
+    if (AB_squared == 0.0f)
     {
-        return Vector2(x + other.x, y + other.y);
+        return glm::length(AP);
     }
 
-    static float DistanceToPointFromLine(Vector2 a, Vector2 b, Vector2 point)
+    // Calculate the dot product and the projection factor
+    float projection = glm::dot(AP, AB) / AB_squared;
+
+    // Check if P projects outside the line segment
+    if (projection < 0.0f)
     {
-        float numerator = fabs((b.y - a.y) * point.x - (b.x - a.x) * point.y + b.x * a.y - b.y * a.x);
-        float denominator = sqrt((b.y - a.y) * (b.y - a.y) + (b.x - a.x) * (b.x - a.x));
-        float distance = numerator / denominator;
-        return distance;
+        return glm::length(AP); // Distance to A
     }
-};
+    else if (projection > 1.0f)
+    {
+        return glm::length(P - B); // Distance to B
+    }
+    else
+    {
+        glm::vec2 projectionPoint = A + projection * AB; // Projection point on the line
+        return glm::length(P - projectionPoint);         // Perpendicular distance to the line
+    }
+}
 #endif

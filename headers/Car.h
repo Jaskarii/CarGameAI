@@ -7,23 +7,30 @@
 #include <string>
 #include "glfw3.h"
 #include "Vector2.h"
+#include "GfxObject.h"
 
-class Car
+class Car : public GfxObject
 {
 public:
     Car();
     ~Car();
-    void Render(GLFWwindow *window);
-    Vector2 GetPosition();
+    void Render(glm::mat4 MVP);
+    glm::vec2 GetPosition();
+    void Rotate(float angle);
+    void Accelerate(float acc);
+    void SetCrashed(bool crashed);
+    bool IsCrashed();
 
 private:
     Vertexarray *va;
     IndexBuffer *ibo;
     VertexBuffer *vbo;
     Shader *shader;
+    glm::vec2 position{0.0f, 0.0f};
     float *positions;
     float dirX = 0;
     float dirY = 1;
     float speed = 0;
+    bool isCrashed = false;
 };
 #endif // CAR_H

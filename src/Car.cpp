@@ -6,12 +6,12 @@
 Car::Car()
 {
     float temp_positions[] = {
-        -0.1f, 0.7f};
+        0.0f, 0.0f};
 
-        positions = new float[2]; // Allocate memory for 2 floats (adjust size accordingly)
+    positions = new float[2]; // Allocate memory for 2 floats (adjust size accordingly)
     std::copy(std::begin(temp_positions), std::end(temp_positions), positions);
 
-    vbo = new VertexBuffer(positions, 2 * sizeof(float));
+    vbo = new VertexBuffer(positions, 4 * sizeof(float));
 
     shader = new Shader("../shaders/Car.glsl");
 
@@ -33,46 +33,47 @@ void rotateVector(float *X, float *Y, float angle)
     *Y = rotatedY;
 }
 
-void Car::Render(GLFWwindow *window)
+void Car::Render(glm::mat4 MVP)
 {
-
-    if (speed > 0)
+    if (isCrashed)
     {
-        vbo->Bind();
-        positions[0] += dirX * speed;
-        positions[1] += dirY * speed;
-        glBufferSubData(GL_ARRAY_BUFFER, 0, 2 * sizeof(float), positions);
+        speed = std::min(speed, 0.1f);
     }
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-    {
-        rotateVector(&dirX, &dirY, 0.05f);
-    }
-    else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-    {
-        rotateVector(&dirX, &dirY, -0.05f);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        speed += 0.0001f;
-        speed = std::min(speed, 0.01f);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-    {
-        speed -= 0.0001f;
-        speed = std::max(speed, 0.0f);
-    }
+    position.x += dirX * speed;
+    position.y += dirY * speed;
 
     va->Bind();
     shader->Bind();
     shader->SetUniform2f("direction", dirX, dirY);
+    shader->SetUniformMat4f("MVP", MVP);
 
-    glDrawArrays(GL_POINTS, 0, 1);
+    glDrawArrays(GL_POINTS, 0, 2);
 }
 
-Vector2 Car::GetPosition()
+glm::vec2 Car::GetPosition()
 {
-    return Vector2(positions[0], positions[1]);
+    return position;
+}
+
+void Car::Rotate(float angle)
+{
+    rotateVector(&dirX, &dirY, angle);
+}
+
+void Car::Accelerate(float acc)
+{
+    speed += acc;
+    speed = std::min(speed, 4.0f);
+    speed = std::max(speed, 0.0f);
+}
+
+void Car::SetCrashed(bool crashed)
+{
+    isCrashed = crashed;
+}
+
+bool Car::IsCrashed()
+{
+    return isCrashed;
 }

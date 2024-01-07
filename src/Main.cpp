@@ -17,9 +17,20 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_glfw.h"
 #include "ImGui/imgui_impl_opengl3.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include "Main.h"
 
-Car *car;
-Road *road;
+glm::mat4 proj;
+glm::mat4 view = glm::mat4(1.0f);
+glm::mat4 MVP;
+
+void setCameraTo(glm::vec2 position)
+{
+	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-position.x, -position.y, 0.0f));
+	MVP = proj * view; // Combine the translation with the MVP
+}
+
 void checkGLError()
 {
 	GLenum err;
@@ -31,6 +42,10 @@ void checkGLError()
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
+	glfwGetFramebufferSize(window, &width, &height);
+	float fWidth = width / 2;
+	float fHeight = height / 2;
+	proj = glm::ortho(-fWidth, fWidth, -fHeight, fHeight, -1.0f, 1.0f);
 	glViewport(0, 0, width, height);
 }
 
@@ -42,29 +57,31 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 		glfwGetCursorPos(window, &xpos, &ypos);
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-
+		float fwidth = width;
+		float fheight = height;
+		ypos = height - ypos;
 		// Convert cursor position to OpenGL normalized coordinates
-		float normalizedX = static_cast<float>(2.0 * xpos / width - 1.0);
-		float normalizedY = static_cast<float>(1.0 - 2.0 * ypos / height);
-
-		road->SetNewPath(normalizedX, normalizedY);
+		// road->SetNewPath(Vector2(xpos, ypos));
 	}
 }
 
 int main()
 {
-	// GLFW initialization
 	if (!glfwInit())
 	{
-		// Handle GLFW initialization failure
 		return -1;
 	}
 
 	// Create a window and OpenGL context
 	GLFWwindow *window = glfwCreateWindow(800, 800, "MyOpenGL", NULL, NULL);
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	float fWidth = width / 2;
+	float fHeight = height / 2;
+	proj = glm::ortho(-fWidth, fWidth, -fHeight, fHeight, -1.0f, 1.0f);
+
 	if (!window)
 	{
-		// Handle window creation failure
 		glfwTerminate();
 		return -1;
 	}
@@ -88,6 +105,8 @@ int main()
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Check for framebuffer size and set the viewport
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -104,9 +123,14 @@ int main()
 	{
 		checkGLError();
 		renderer.Clear();
+		CheckKeyPress(window);
 
-		road->Render(window);
-		car->Render(window);
+		setCameraTo(car->GetPosition());
+		road->Render(MVP);
+
+		car->SetCrashed(road->IsOffRoad(car->GetPosition()));
+
+		car->Render(proj);
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
@@ -115,4 +139,34 @@ int main()
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
+}
+
+void CheckKeyPress(GLFWwindow *window)
+{
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	{
+		car->Rotate(0.015f);
+	}
+	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+	{
+		car->Rotate(-0.015f);
+	}
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		car->Accelerate(0.015f);
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		car->Accelerate(-0.015f);
+	}
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		scale += 0.05;
+		scale = std::min(scale, 1.0f);
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		scale -= 0.05;
+		scale = std::max(scale, 0.1f);
+	}
 }

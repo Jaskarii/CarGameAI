@@ -25,9 +25,10 @@ include_directories(
 # Add glad.c to your project
 add_library(glad glad.c)
 
-file(GLOB IMGUISOURCES "Libraries/ImGui/*.cpp")
+file(GLOB IMGUI_SOURCES "Libraries/include/ImGui/*.cpp")
+message(STATUS IMGUI_SOURCES: ${IMGUI_SOURCES})
 
-add_library(imgui ${IMGUISOURCES})
+add_library(imgui ${IMGUI_SOURCES})
 
 # Source files
 file(GLOB SOURCES "src/*.cpp")

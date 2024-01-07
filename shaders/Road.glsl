@@ -2,6 +2,8 @@
 #version 330 core
 layout(location=0)in vec2 vPosition;
 
+//uniform vec2 offset;
+
 void main()
 {
     gl_Position=vec4(vPosition.x,vPosition.y,0.,1.);
@@ -17,6 +19,7 @@ flat out vec2 Cpos;
 out vec2 centerLine;
 flat out int isEndRect;
 uniform float Width;
+uniform mat4 MVP;
 
 vec4 rotate90CW(vec4 v)
 {
@@ -26,7 +29,7 @@ vec4 rotate90CW(vec4 v)
 void emitVertex(vec4 pos)
 {
     fVertexPos=pos.xy;
-    gl_Position=pos;
+    gl_Position=MVP*pos;
     EmitVertex();
 }
 
@@ -81,15 +84,14 @@ flat in vec2 Cpos;
 in vec2 centerLine;
 flat in int isEndRect;
 uniform float Width;
-uniform float Alpha;
 
 void main()
 {
-    float a=Alpha;
+    float a=1;
     if(isEndRect==1)
     {
         float d=distance(Cpos,fVertexPos);
-        a*=smoothstep(Width,Width-.01,d);
+        a*=smoothstep(Width,Width-2,d);
     }
     else
     {
@@ -98,12 +100,7 @@ void main()
         vec2 perpCnormed=vec2(Cnorm.y,-Cnorm.x);
         vec2 p13=fVertexPos-Cpos;
         float distanceFromLine=abs(dot(perpCnormed,p13));
-        //a*=smoothstep(Width,Width-.01,distanceFromLine);
+        a*=smoothstep(Width,Width-2,distanceFromLine);
     }
-    
-    if(a<.02)
-    {
-        discard;
-    }
-    vFragColor=vec4(1,1,0,a);
+    vFragColor=vec4(1.,1.,0,a);
 }

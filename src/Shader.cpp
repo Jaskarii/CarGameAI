@@ -1,12 +1,13 @@
 #include "Shader.h"
-#include<glad/glad.h>
-#include<fstream>
-#include<string>
-#include<sstream>
-#include<assert.h>
-#include<iostream>
+#include <glad/glad.h>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <assert.h>
+#include <iostream>
+#include "../Libraries/include/glm/gtc/type_ptr.hpp"
 
-Shader::Shader(const std::string& filepath)
+Shader::Shader(const std::string &filepath)
 {
 	ShaderProgramSource source = ParseShader(filepath);
 	m_RendererId = CreateShader(source.VertexSource, source.GeometrySource, source.FragmentSource);
@@ -27,35 +28,40 @@ void Shader::UnBind() const
 	glUseProgram(0);
 }
 
-void Shader::SetUniform1i(const std::string& name, int value)
+void Shader::SetUniform1i(const std::string &name, int value)
 {
 	glUniform1i(GetUniformLocation(name), value);
 }
 
-void Shader::SetUniform1f(const std::string& name, float value)
+void Shader::SetUniform1f(const std::string &name, float value)
 {
 	glUniform1f(GetUniformLocation(name), value);
 }
 
-void Shader::SetUniform2f(const std::string& name, float value1, float value2)
+void Shader::SetUniform2f(const std::string &name, float value1, float value2)
 {
 	glUniform2f(GetUniformLocation(name), value1, value2);
 }
 
-void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
+void Shader::SetUniform4f(const std::string &name, float v0, float v1, float v2, float v3)
 {
 	glUniform4f(GetUniformLocation(name), v0, v1, v2, v3);
 }
 
-unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
+void Shader::SetUniformMat4f(const std::string &name, const glm::mat4 &matrix)
+{
+	glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+unsigned int Shader::CompileShader(unsigned int type, const std::string &source)
 {
 	unsigned int id = glCreateShader(type);
-	//Return the pointer to the first element of the array
-	const char* src = source.c_str();
+	// Return the pointer to the first element of the array
+	const char *src = source.c_str();
 	glShaderSource(id, 1, &src, nullptr);
 	glCompileShader(id);
 
-	//Do error handling
+	// Do error handling
 	int result;
 	glGetShaderiv(id, GL_COMPILE_STATUS, &result);
 
@@ -63,7 +69,7 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 	{
 		int length;
 		glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-		char* message = (char*)alloca(length * sizeof(char));
+		char *message = (char *)alloca(length * sizeof(char));
 		glGetShaderInfoLog(id, length, &length, message);
 		std::cout << message << std::endl;
 		glDeleteShader(id);
@@ -72,7 +78,7 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 	return id;
 }
 
-int Shader::GetUniformLocation(const std::string& name)
+int Shader::GetUniformLocation(const std::string &name)
 {
 	if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
 	{
@@ -87,13 +93,16 @@ int Shader::GetUniformLocation(const std::string& name)
 	return location;
 }
 
-ShaderProgramSource Shader::ParseShader(const std::string& file)
+ShaderProgramSource Shader::ParseShader(const std::string &file)
 {
 	std::ifstream stream(file);
 
 	enum class ShaderType
 	{
-		NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2
+		NONE = -1,
+		VERTEX = 0,
+		FRAGMENT = 1,
+		GEOMETRY = 2
 	};
 
 	std::string line;
@@ -122,10 +131,10 @@ ShaderProgramSource Shader::ParseShader(const std::string& file)
 			ss[(int)type] << line << '\n';
 		}
 	}
-	return { ss[0].str(), ss[1].str(),ss[2].str() };
+	return {ss[0].str(), ss[1].str(), ss[2].str()};
 }
 
-unsigned int Shader::CreateShader(const std::string& vertexShader,const std::string& geometryShader, const std::string& fragmentShader)
+unsigned int Shader::CreateShader(const std::string &vertexShader, const std::string &geometryShader, const std::string &fragmentShader)
 {
 	unsigned int program = glCreateProgram();
 	unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
@@ -136,15 +145,12 @@ unsigned int Shader::CreateShader(const std::string& vertexShader,const std::str
 		glAttachShader(program, gs);
 		glDeleteShader(gs);
 	}
-	
-
 
 	glAttachShader(program, vs);
 	glAttachShader(program, fs);
 
 	glLinkProgram(program);
 	glValidateProgram(program);
-
 
 	glDeleteShader(vs);
 	glDeleteShader(fs);
