@@ -3,22 +3,14 @@
 #include <iostream>
 #include "VertexBufferLayout.h"
 
-Car::Car()
+
+
+Car::Car(float posX, float posY)
 {
-    float temp_positions[] = {
-        0.0f, 0.0f};
-
-    positions = new float[2]; // Allocate memory for 2 floats (adjust size accordingly)
-    std::copy(std::begin(temp_positions), std::end(temp_positions), positions);
-
-    vbo = new VertexBuffer(positions, 4 * sizeof(float));
-
-    shader = new Shader("../shaders/Car.glsl");
-
-    va = new Vertexarray();
-    VertexBufferLayout layout;
-    layout.PushFloat(2);
-    va->AddBuffer(*vbo, layout);
+    carStatus.posX = posX;
+    carStatus.posY = posY;
+    std::vector<int> layers = {6, 15, 15, 15, 4};
+    network = new NeuralNetwork(layers);
 }
 
 Car::~Car()
@@ -33,32 +25,25 @@ void rotateVector(float *X, float *Y, float angle)
     *Y = rotatedY;
 }
 
-void Car::Render(glm::mat4 MVP)
+void Car::Update()
 {
     if (isCrashed)
     {
         speed = std::min(speed, 0.1f);
     }
 
-    position.x += dirX * speed;
-    position.y += dirY * speed;
-
-    va->Bind();
-    shader->Bind();
-    shader->SetUniform2f("direction", dirX, dirY);
-    shader->SetUniformMat4f("MVP", MVP);
-
-    glDrawArrays(GL_POINTS, 0, 2);
+    carStatus.posX += carStatus.dirX * speed;
+    carStatus.posY += carStatus.dirY * speed;
 }
 
 glm::vec2 Car::GetPosition()
 {
-    return position;
+    return glm::vec2(carStatus.posX, carStatus.posY);
 }
 
 void Car::Rotate(float angle)
 {
-    rotateVector(&dirX, &dirY, angle);
+    rotateVector(&carStatus.dirX, &carStatus.dirY, angle);
 }
 
 void Car::Accelerate(float acc)
@@ -76,4 +61,14 @@ void Car::SetCrashed(bool crashed)
 bool Car::IsCrashed()
 {
     return isCrashed;
+}
+
+CarVertex Car::GetStatus()
+{
+    return carStatus;
+}
+
+void Car::SetCamera(bool isCam)
+{
+    carStatus.isCamera = 1;
 }

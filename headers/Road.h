@@ -10,6 +10,7 @@
 #include <string>
 #include "Vector2.h"
 #include "GfxObject.h"
+#include "Car.h"
 
 class Road : public GfxObject
 {
@@ -18,7 +19,7 @@ public:
     ~Road();
     void SetNewPath(glm::vec2 pos);
     void Render(glm::mat4 MVP);
-    bool IsOffRoad(glm::vec2 position);
+    bool IsOffRoad(Car* car);
     void SetWidth(float givenWidth)
     {
         width = givenWidth;

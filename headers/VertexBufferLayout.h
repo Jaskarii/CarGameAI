@@ -11,12 +11,11 @@ struct VertexBufferElement {
     static unsigned int GetSizeOfType(unsigned int type) {
         switch (type) {
         case GL_FLOAT:
-            return 4;
         case GL_UNSIGNED_INT:
             return 4;
         case GL_UNSIGNED_BYTE:
-            return 1;
-        // Add cases for other data types if needed
+        case GL_BOOL:
+            return 1; 
         default:
             return 0; // Or handle unsupported types accordingly
     }
@@ -45,6 +44,11 @@ public:
     void PushUChar(unsigned int count) {
         m_Elements.push_back(VertexBufferElement{ GL_UNSIGNED_BYTE, count, GL_TRUE });
         m_Stride += VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE) * count;
+    }
+
+    void PushBool(unsigned int count) {
+    m_Elements.push_back(VertexBufferElement{ GL_BOOL, count, GL_FALSE });
+    m_Stride += VertexBufferElement::GetSizeOfType(GL_BOOL) * count;
     }
 
     inline const std::vector<VertexBufferElement>& GetElements() const {

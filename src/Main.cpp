@@ -115,8 +115,16 @@ int main()
 	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 	glViewport(0, 0, windowWidth, windowHeight);
 	Renderer renderer;
+	carHandler = new CarHandler();
 
-	car = new Car();
+	for (int i = 0; i < 25; ++i) 
+	{
+    	Car car(15.0f * i, 0.0f); // Create a Car object and initialize it
+		carHandler->AddCar(car);
+	}
+	carHandler->InitBuffers();
+
+	carHandler->GetCars()->front().SetCamera(true);
 	road = new Road();
 
 	while (!glfwWindowShouldClose(window))
@@ -125,12 +133,10 @@ int main()
 		renderer.Clear();
 		CheckKeyPress(window);
 
-		setCameraTo(car->GetPosition());
+		UpdateCars(carHandler->GetCars(), road);
 		road->Render(MVP);
+		carHandler->Render(proj, MVP);
 
-		car->SetCrashed(road->IsOffRoad(car->GetPosition()));
-
-		car->Render(proj);
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
@@ -145,19 +151,19 @@ void CheckKeyPress(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		car->Rotate(0.015f);
+		carHandler-> GetCars()->front().Rotate(0.03f);
 	}
 	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		car->Rotate(-0.015f);
+		carHandler-> GetCars()->front().Rotate(-0.03f);	
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		car->Accelerate(0.015f);
+		carHandler-> GetCars()->front().Accelerate(0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		car->Accelerate(-0.015f);
+		carHandler-> GetCars()->front().Accelerate(-0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
@@ -169,4 +175,26 @@ void CheckKeyPress(GLFWwindow *window)
 		scale -= 0.05;
 		scale = std::max(scale, 0.1f);
 	}
+}
+
+void UpdateCars(std::vector<Car> *cars, Road *road)
+{
+	// Initialize variables to track the maximum A value and the corresponding Car.
+    float maxY = cars->at(0).GetStatus().posY;
+    int carWithMaxY = 0;
+
+    // Iterate through the vector to find the Car with the highest A value.
+    for (size_t i = 0; i < cars->size(); i++)
+    {
+		Car& car = cars->at(i);
+		car.SetCrashed(road->IsOffRoad(&car));
+        if (car.GetStatus().posY > maxY)
+        {
+            carWithMaxY = i;
+            maxY = car.GetStatus().posY;
+        }
+        car.SetCamera(false);
+    }
+    cars->at(carWithMaxY).SetCamera(true);
+	setCameraTo(cars->at(carWithMaxY).GetPosition());
 }

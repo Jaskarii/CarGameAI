@@ -59,8 +59,9 @@ void Road::Render(glm::mat4 MVP)
 
 int positionIndex = 1;
 
-bool Road::IsOffRoad(glm::vec2 position)
+bool Road::IsOffRoad(Car* car)
 {
+	glm::vec2 position = car->GetPosition();
 	float distance1 = DistanceToLineSegment(position, positions[positionIndex], positions[positionIndex - 1]);
 	if (distance1 < width)
 	{

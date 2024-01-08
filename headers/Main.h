@@ -1,5 +1,7 @@
+#include "CarHandler.h"
 void CheckKeyPress(GLFWwindow *window);
 
 float scale = 1;
-Car *car;
+CarHandler *carHandler;
 Road *road;
+void UpdateCars(std::vector<Car> *cars, Road *road);

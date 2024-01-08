@@ -2,9 +2,16 @@
 #version 330 core
 
 layout(location=0)in vec2 aPos;
+layout(location=1)in vec2 aDir;
+layout(location=2)in uint isCamera;
+
+out vec2 direction;
+out uint isCameraFollowing;
 
 void main()
 {
+    isCameraFollowing = isCamera;
+    direction = aDir;
     gl_Position=vec4(aPos.x,aPos.y,0.,1.);
 };
 
@@ -14,8 +21,11 @@ layout(points)in;
 layout(triangle_strip,max_vertices=3)out;
 
 out vec2 fVertexPos;// interpolated model-space position of vertices of triangle where circle is draw.
-uniform vec2 direction;
-uniform mat4 MVP;
+in vec2[] direction;
+in uint[] isCameraFollowing;
+uniform mat4 proj;
+uniform mat4 mvp;
+mat4 MVP;
 
 void emitVertex(vec2 pos)
 {
@@ -26,7 +36,16 @@ void emitVertex(vec2 pos)
 
 void main()
 {
-    vec2 dir=normalize(direction);
+    if (isCameraFollowing[0] == uint(1))
+    {
+        MVP = proj;
+    }
+    else
+    {
+        MVP = mvp;
+    }
+
+    vec2 dir=normalize(direction[0]);
     vec2 dirNormal=vec2(dir.y,-dir.x);
     
     emitVertex(gl_in[0].gl_Position.xy+5*(-dir+dirNormal));

@@ -8,29 +8,37 @@
 #include "glfw3.h"
 #include "Vector2.h"
 #include "GfxObject.h"
+#include "NeuralNetwork.h"
 
-class Car : public GfxObject
+struct CarVertex
+{
+    float posX = 0.0f;
+    float posY = 0.0f;
+    float dirX = 0.0f;
+    float dirY = 1.0f;
+    unsigned int isCamera = 0;
+};
+
+class Car
 {
 public:
-    Car();
+    Car(float posX, float posY);
     ~Car();
-    void Render(glm::mat4 MVP);
+    void Update();
     glm::vec2 GetPosition();
     void Rotate(float angle);
     void Accelerate(float acc);
     void SetCrashed(bool crashed);
     bool IsCrashed();
+    CarVertex GetStatus();
+    void SetCamera(bool isCam);
+    void SetInput();
 
 private:
-    Vertexarray *va;
-    IndexBuffer *ibo;
-    VertexBuffer *vbo;
-    Shader *shader;
-    glm::vec2 position{0.0f, 0.0f};
+    CarVertex carStatus;
     float *positions;
-    float dirX = 0;
-    float dirY = 1;
     float speed = 0;
     bool isCrashed = false;
+    NeuralNetwork* network;
 };
 #endif // CAR_H
