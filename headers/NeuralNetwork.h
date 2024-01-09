@@ -1,5 +1,6 @@
 // NeuralNetwork.h - Header file
-
+#ifndef NN_H
+#define NN_H
 #include <vector>
 #include <random>
 
@@ -9,9 +10,10 @@ public:
     NeuralNetwork(const std::vector<int> &layers);
     void CopyWeights(const NeuralNetwork &copyFrom);
     std::vector<float> FeedForward(const std::vector<float> &inputs);
-    void Mutate();
+    void Mutate(float rate);
     void AddFitness(float fit);
     void SetFitness(float fit);
+    std::vector<std::vector<std::vector<float>>>* GetWeights();
     float GetFitness() const;
     int CompareTo(const NeuralNetwork &other) const;
 
@@ -25,3 +27,4 @@ private:
     void InitWeights();
     static float RandomWeight(); // Function to generate a random weight
 };
+#endif

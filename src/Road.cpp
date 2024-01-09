@@ -27,17 +27,6 @@ Road::Road()
 		yPos += random_floaty;
 		SetNewPath(glm::vec2(random_float, yPos));
 	}
-
-	vbo = new VertexBuffer(positions, 1000000 * sizeof(float));
-	ibo = new IndexBuffer(indices, 1000000);
-	shader = new Shader("../shaders/Road.glsl");
-	shader->Bind();
-	shader->SetUniform1f("Width", width);
-
-	va = new Vertexarray();
-	VertexBufferLayout layout;
-	layout.PushFloat(2);
-	va->AddBuffer(*vbo, layout);
 }
 
 Road::~Road()
@@ -57,21 +46,19 @@ void Road::Render(glm::mat4 MVP)
 	}
 }
 
-int positionIndex = 1;
-
 bool Road::IsOffRoad(Car* car)
 {
 	glm::vec2 position = car->GetPosition();
-	float distance1 = DistanceToLineSegment(position, positions[positionIndex], positions[positionIndex - 1]);
+	float distance1 = DistanceToLineSegment(position, positions[car->CurrentPathIndex], positions[car->CurrentPathIndex - 1]);
 	if (distance1 < width)
 	{
 		return false;
 	}
-	float distance2 = DistanceToLineSegment(position, positions[positionIndex], positions[positionIndex + 1]);
+	float distance2 = DistanceToLineSegment(position, positions[car->CurrentPathIndex], positions[car->CurrentPathIndex + 1]);
 
 	if (distance1 > distance2)
 	{
-		positionIndex++;
+		car->CurrentPathIndex++;
 	}
 
 	if (std::min(distance1, distance2) > width)
@@ -80,6 +67,25 @@ bool Road::IsOffRoad(Car* car)
 	}
 
 	return false;
+}
+
+glm::vec2 *Road::getPositionArray()
+{
+    return positions;
+}
+
+void Road::InitBuffers()
+{
+	vbo = new VertexBuffer(positions, 1000000 * sizeof(float));
+	ibo = new IndexBuffer(indices, 1000000);
+	shader = new Shader("../shaders/Road.glsl");
+	shader->Bind();
+	shader->SetUniform1f("Width", width);
+
+	va = new Vertexarray();
+	VertexBufferLayout layout;
+	layout.PushFloat(2);
+	va->AddBuffer(*vbo, layout);
 }
 
 void Road::SetNewPath(glm::vec2 pos)

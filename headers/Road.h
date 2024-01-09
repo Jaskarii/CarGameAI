@@ -20,6 +20,8 @@ public:
     void SetNewPath(glm::vec2 pos);
     void Render(glm::mat4 MVP);
     bool IsOffRoad(Car* car);
+    glm::vec2* getPositionArray();
+    void InitBuffers();
     void SetWidth(float givenWidth)
     {
         width = givenWidth;

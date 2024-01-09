@@ -6,6 +6,32 @@ NeuralNetwork::NeuralNetwork(const std::vector<int> &layers) : layers(layers), f
 {
     InitNeurons();
     InitWeights();
+    Mutate(200);
+}
+
+void NeuralNetwork::CopyWeights(const NeuralNetwork &copyFrom)
+{
+    if (weights.size() != copyFrom.weights.size()) 
+    {
+        return;
+    }
+
+    for (int i = 0; i < weights.size(); ++i) 
+    {
+        if (weights[i].size() != copyFrom.weights[i].size() ||
+            weights[i][0].size() != copyFrom.weights[i][0].size())
+        {
+            return;
+        }
+
+        for (int j = 0; j < weights[i].size(); ++j) 
+        {
+            for (int k = 0; k < weights[i][j].size(); ++k) 
+            {
+                weights[i][j][k] = copyFrom.weights[i][j][k];
+            }
+        }
+    }
 }
 
 void NeuralNetwork::InitNeurons()
@@ -64,11 +90,11 @@ std::vector<float> NeuralNetwork::FeedForward(const std::vector<float> &inputs)
     return neurons.back();
 }
 
-void NeuralNetwork::Mutate()
+void NeuralNetwork::Mutate(float rate)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 100.0f);
+    std::uniform_real_distribution<float> dist(0.0f, 100);
 
     for (auto &layer : weights)
     {
@@ -77,8 +103,26 @@ void NeuralNetwork::Mutate()
             for (auto &weight : neuron)
             {
                 float randomNumber = dist(gen);
-                // Apply mutations based on the random number
-                // ...
+                if (randomNumber > 98)
+                {
+                    weight = RandomWeight();
+                }
+                else if (randomNumber > 90)
+                {
+                    weight = -weight;
+                }
+                else if (randomNumber > 70)
+                {
+                    weight += 0.1;
+                }
+                else if (randomNumber > 50)
+                {
+                    weight -= 0.1;
+                }
+                else
+                {
+                    continue;
+                }
             }
         }
     }
@@ -100,6 +144,11 @@ void NeuralNetwork::AddFitness(float fit)
 void NeuralNetwork::SetFitness(float fit)
 {
     fitness = fit;
+}
+
+std::vector<std::vector<std::vector<float>>> *NeuralNetwork::GetWeights()
+{
+    return &weights;
 }
 
 float NeuralNetwork::GetFitness() const

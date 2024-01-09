@@ -20,10 +20,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Main.h"
+#include "NetworkManager.h"
 
+GLFWwindow* window;
+Renderer* renderer;
 glm::mat4 proj;
 glm::mat4 view = glm::mat4(1.0f);
 glm::mat4 MVP;
+NetworkManager* manager;
+int frames = 0;
+int carWithMaxY = 0;
+
+bool isOpenGL = true;
+
+const int amountOfCars = 400;
 
 void setCameraTo(glm::vec2 position)
 {
@@ -65,15 +75,14 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 	}
 }
 
-int main()
+bool InitOpenGL()
 {
 	if (!glfwInit())
 	{
-		return -1;
+		return false;
 	}
-
 	// Create a window and OpenGL context
-	GLFWwindow *window = glfwCreateWindow(800, 800, "MyOpenGL", NULL, NULL);
+	window = glfwCreateWindow(800, 800, "MyOpenGL", NULL, NULL);
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	float fWidth = width / 2;
@@ -83,9 +92,8 @@ int main()
 	if (!window)
 	{
 		glfwTerminate();
-		return -1;
+		return false;
 	}
-
 	// Make the OpenGL context associated with the window current
 	glfwMakeContextCurrent(window);
 
@@ -114,36 +122,88 @@ int main()
 	int windowWidth, windowHeight;
 	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 	glViewport(0, 0, windowWidth, windowHeight);
-	Renderer renderer;
-	carHandler = new CarHandler();
+	return true;
+}
+float yMax = 0;
 
-	for (int i = 0; i < 25; ++i) 
+void InitControls()
+{
+	renderer = new Renderer();
+	carHandler = new CarHandler();
+	manager = new NetworkManager();
+
+	for (int i = 0; i < amountOfCars; ++i)
 	{
-    	Car car(15.0f * i, 0.0f); // Create a Car object and initialize it
+		Car car(0, 0); // Create a Car object and initialize it
 		carHandler->AddCar(car);
 	}
-	carHandler->InitBuffers();
+	std::vector<int> layers = {8, 20, 20, 15, 4};
 
-	carHandler->GetCars()->front().SetCamera(true);
+	manager ->InitNetworks(layers,amountOfCars);
 	road = new Road();
 
-	while (!glfwWindowShouldClose(window))
+
+	if(isOpenGL)
 	{
-		checkGLError();
-		renderer.Clear();
-		CheckKeyPress(window);
-
-		UpdateCars(carHandler->GetCars(), road);
-		road->Render(MVP);
-		carHandler->Render(proj, MVP);
-
-		glfwSwapBuffers(window);
-
-		glfwPollEvents();
+		carHandler->InitBuffers();
+		road ->InitBuffers();
 	}
+}
 
+void ResetControls()
+{	yMax = 0;
+	frames = 0;
+	//Add cars y position to networks fitness score.
+	for (size_t i = 0; i < amountOfCars; i++)
+	{
+		manager ->GetNetWork(i)->AddFitness(carHandler->GetCars()->at(i).GetPosition().y);
+	}
+	manager->NextGeneration();
+	carHandler-> ResetCars();
+}
+
+bool OpenGLRender()
+{
+	if (glfwWindowShouldClose(window))
+	{
+		return false;
+	}
+	setCameraTo(carHandler->GetCars()->at(carWithMaxY).GetPosition());
+
+	checkGLError();
+	renderer->Clear();
+	road->Render(MVP);
+	carHandler->Render(proj, MVP);
+	glfwSwapBuffers(window);
+	glfwPollEvents();
+}
+
+void OpenGLEnd()
+{
 	glfwDestroyWindow(window);
 	glfwTerminate();
+}
+
+int main()
+{
+	if(isOpenGL && !InitOpenGL())
+	{
+		return -1;
+	}
+
+	InitControls();
+
+	while (true)
+	{
+		//CheckKeyPress(window);
+		if (isOpenGL)
+		{
+			OpenGLRender();
+		}
+		
+		UpdateCars(carHandler->GetCars(), road);
+	}
+
 	return 0;
 }
 
@@ -181,12 +241,18 @@ void UpdateCars(std::vector<Car> *cars, Road *road)
 {
 	// Initialize variables to track the maximum A value and the corresponding Car.
     float maxY = cars->at(0).GetStatus().posY;
-    int carWithMaxY = 0;
 
+	bool EndRun = true;
     // Iterate through the vector to find the Car with the highest A value.
     for (size_t i = 0; i < cars->size(); i++)
-    {
+    {	
 		Car& car = cars->at(i);
+		if (!car.IsCrashed())
+		{
+			EndRun =false;
+		}
+		car.SetInputPositions(road->getPositionArray());
+		car.GetAndHandleOutPuts(manager->GetNetWork(i));
 		car.SetCrashed(road->IsOffRoad(&car));
         if (car.GetStatus().posY > maxY)
         {
@@ -194,7 +260,15 @@ void UpdateCars(std::vector<Car> *cars, Road *road)
             maxY = car.GetStatus().posY;
         }
         car.SetCamera(false);
+		car.Update();
+		
     }
+
+	if ((EndRun && frames > 200) || frames > 10000)
+	{
+		ResetControls();
+	}
+	
     cars->at(carWithMaxY).SetCamera(true);
-	setCameraTo(cars->at(carWithMaxY).GetPosition());
+	frames++;
 }

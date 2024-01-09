@@ -15,7 +15,8 @@ void CarHandler::Render(glm::mat4 proj, glm::mat4 mvp)
 {
     for (size_t i = 0; i < cars->size(); i++)
     {
-        cars->at(i).Update();
+                cars->at(i).Update();
+
         carVertices[i] = cars->at(i).GetStatus();
     }
     carVertices[yMaxIndex].isCamera = 1;
@@ -77,6 +78,14 @@ Car *CarHandler::GetBestCar()
     }
     cars->at(carWithMaxY).SetCamera(true);
     return &(cars->at(carWithMaxY));
+}
+
+void CarHandler::ResetCars()
+{
+    for (size_t i = 0; i < cars->size(); i++)
+    {
+        cars->at(i).Reset();
+    }
 }
 
 #endif

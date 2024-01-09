@@ -10,6 +10,7 @@ class CarHandler
         void InitBuffers();
         std::vector<Car>* GetCars();
         Car* GetBestCar();
+        void ResetCars();
 
     private:
         Vertexarray *va;
