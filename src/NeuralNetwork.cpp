@@ -11,14 +11,14 @@ NeuralNetwork::NeuralNetwork(const std::vector<int> &layers) : layers(layers), f
     Mutate(200);
 }
 
-void NeuralNetwork::CopyWeights(NeuralNetwork* copyFrom)
+void NeuralNetwork::CopyWeights(NeuralNetwork *copyFrom)
 {
-    if (weights.size() != copyFrom->weights.size()) 
+    if (weights.size() != copyFrom->weights.size())
     {
         return;
     }
 
-    for (int i = 0; i < weights.size(); ++i) 
+    for (int i = 0; i < weights.size(); ++i)
     {
         if (weights[i].size() != copyFrom->weights[i].size() ||
             weights[i][0].size() != copyFrom->weights[i][0].size())
@@ -26,9 +26,9 @@ void NeuralNetwork::CopyWeights(NeuralNetwork* copyFrom)
             return;
         }
 
-        for (int j = 0; j < weights[i].size(); ++j) 
+        for (int j = 0; j < weights[i].size(); ++j)
         {
-            for (int k = 0; k < weights[i][j].size(); ++k) 
+            for (int k = 0; k < weights[i][j].size(); ++k)
             {
                 weights[i][j][k] = copyFrom->weights[i][j][k];
             }
@@ -92,7 +92,7 @@ std::vector<float> NeuralNetwork::FeedForward(const std::vector<float> &inputs)
     return neurons.back();
 }
 
-void NeuralNetwork::Mutate(float rate)
+void NeuralNetwork::Mutate(int rate)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -105,7 +105,7 @@ void NeuralNetwork::Mutate(float rate)
             for (auto &weight : neuron)
             {
                 float randomNumber = dist(gen);
-                if (rate > 150)
+                if (rate > 200)
                 {
                     if (randomNumber > 99)
                     {
@@ -116,7 +116,7 @@ void NeuralNetwork::Mutate(float rate)
                         weight = -weight;
                     }
                 }
-                
+
                 if (randomNumber > 70 && randomNumber < 90)
                 {
                     weight += 0.1;
@@ -168,15 +168,19 @@ void NeuralNetwork::printWeights()
     std::ofstream outputFile("weights.txt");
 
     // Check if the file opened successfully
-    if (!outputFile.is_open()) {
+    if (!outputFile.is_open())
+    {
         std::cout << "Failed to open the output file." << std::endl;
         return;
     }
 
     // Iterate through the weights and write them to the file in rows and columns
-    for (const auto &layer : weights) {
-        for (const auto &neuron : layer) {
-            for (const auto &weight : neuron) {
+    for (const auto &layer : weights)
+    {
+        for (const auto &neuron : layer)
+        {
+            for (const auto &weight : neuron)
+            {
                 // Set the width for each written weight to ensure alignment
                 outputFile << weight << " ";
             }

@@ -7,18 +7,11 @@
 
 struct InputSpace
 {
-    float pos1X = 0.0f;
-    float pos1Y = 0.0f;
-    float pos2X = 0.0f;
-    float pos2Y = 0.0f;
-    float pos3X = 0.0f;
-    float pos3Y = 0.0f;
-    float pos4X = 0.0f;
-    float pos4Y = 0.0f;
-    float pos5X = 0.0f;
-    float pos5Y = 0.0f;
-    float dirX = 0.0f;
-    float dirY = 0.0f;
+    glm::vec2 nextPoint;
+    glm::vec2 nextPointAfter;
+    glm::vec2 roadDirection;
+    glm::vec2 position;
+    glm::vec2 direction;
     float speed = 0.0f;
     float distanceFromRoad = 0.0f;
 };
@@ -46,7 +39,6 @@ public:
     Car(float posX, float posY);
     ~Car();
     void Update();
-    glm::vec2 GetPosition();
     void Rotate(float angle);
     void Accelerate(float acc);
     void SetCrashed(bool crashed);
@@ -54,14 +46,13 @@ public:
     void Reset();
     CarVertex GetStatus();
     void SetCamera(bool isCam);
-    void SetInputPositions(glm::vec2 *positions);
-    InputSpace* getInputs();
-    void GetAndHandleOutPuts(NeuralNetwork* network);
-    float GetFitness();
+    InputSpace *getInputs();
+    void GetAndHandleOutPuts(NeuralNetwork *network);
     int CurrentPathIndex = 1;
     bool isTraining = true;
 
 private:
+    float calculateRelativeAngle();
     CarVertex carStatus;
     float *positions;
     float speed = 0;

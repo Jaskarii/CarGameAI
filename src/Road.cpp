@@ -3,19 +3,19 @@
 #include <cstdlib>
 #include <ctime>
 
-Road::Road()
+static std::vector<glm::vec2> roadPoints;
+
+void Road::GenerateRandomPoints()
 {
-	int numVertices = 500000; // Assuming each vertex is a Vector2 (x, y)
-	positions = new glm::vec2[numVertices];
-	indices = new unsigned int[1000000];
+	roadPoints.push_back(glm::vec2(0.0f, -100.0f));
+	roadPoints.push_back(glm::vec2(0.0f, 200.0f));
+	roadPoints.push_back(glm::vec2(100.0f, 300.0f));
 
 	const float min_val = -500.0f;
 	const float max_val = 500.0f;
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-	SetNewPath(glm::vec2(0.0f, -100.0f));
-	SetNewPath(glm::vec2(0.0f, 100.0f));
-	float yPos = 300.0f;
+	float yPos = 500.0f;
 	for (size_t i = 0; i < 1000; i++)
 	{
 		int random_int = std::rand();
@@ -25,7 +25,18 @@ Road::Road()
 		float random_floaty = static_cast<float>(random_int) / RAND_MAX; // Between 0 and 1
 		random_floaty = 50.0f + random_floaty * (500.0f - 50.0f);		 // Scale to the desired range
 		yPos += random_floaty;
-		SetNewPath(glm::vec2(random_float, yPos));
+		roadPoints.push_back(glm::vec2(random_float, yPos));
+	}
+}
+
+Road::Road()
+{
+	int numVertices = 500000; // Assuming each vertex is a Vector2 (x, y)
+	positions = new glm::vec2[numVertices];
+	indices = new unsigned int[1000000];
+	for (size_t i = 0; i < roadPoints.size(); i++)
+	{
+		SetNewPath(roadPoints[i]);
 	}
 }
 
@@ -46,19 +57,30 @@ void Road::Render(glm::mat4 MVP)
 	}
 }
 
-bool Road::IsOffRoad(Car* car)
+bool Road::IsOffRoad(Car *car)
 {
-	glm::vec2 position = car->GetPosition();
-	float distance1 = DistanceToLineSegment(position, positions[car->CurrentPathIndex], positions[car->CurrentPathIndex - 1]);
+	InputSpace *inputs = car->getInputs();
+	glm::vec2 position = inputs->position;
+	int currentIndex = car->CurrentPathIndex;
+	float distance1 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex - 1]);
 	if (distance1 < width)
 	{
 		return false;
 	}
-	float distance2 = DistanceToLineSegment(position, positions[car->CurrentPathIndex], positions[car->CurrentPathIndex + 1]);
+	float distance2 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex + 1]);
 
 	if (distance1 > distance2)
 	{
 		car->CurrentPathIndex++;
+		currentIndex++;
+		glm::vec2 roadDir;
+		roadDir.x = positions[currentIndex].x - positions[currentIndex - 1].x;
+		roadDir.y = positions[currentIndex].y - positions[currentIndex - 1].y;
+		inputs->roadDirection = glm::normalize(roadDir);
+		inputs->nextPoint.x = positions[car->CurrentPathIndex].x;
+		inputs->nextPoint.y = positions[car->CurrentPathIndex].y;
+		inputs->nextPointAfter.x = positions[car->CurrentPathIndex + 1].x;
+		inputs->nextPointAfter.y = positions[car->CurrentPathIndex + 1].y;
 	}
 	float distancee = std::min(distance1, distance2);
 	car->getInputs()->distanceFromRoad = distancee;
@@ -72,7 +94,7 @@ bool Road::IsOffRoad(Car* car)
 
 glm::vec2 *Road::getPositionArray()
 {
-    return positions;
+	return positions;
 }
 
 void Road::InitBuffers()

@@ -12,10 +12,11 @@ set(GLFW_LIB_DIR ${CMAKE_SOURCE_DIR}/Libraries/lib)
 include_directories(${GLFW_INCLUDE_DIR})
 
 # Find and link GLFW library
-find_package(glfw3 REQUIRED)
+#find_package(glfw3 REQUIRED)
 find_package(Threads REQUIRED)
 include_directories(${GLFW_INCLUDE_DIRS})  # This line is optional, but it's good practice
 
+link_directories(${GLFW_LIB_DIR})
 
 # Include directories for header files
 include_directories(
@@ -48,7 +49,7 @@ target_link_libraries(MyOpenGLApp
     imgui
     Threads::Threads
     glad  # Example for linking against OpenGL
-    glfw
-    dl
+    glfw3
+    #dl
 )
 

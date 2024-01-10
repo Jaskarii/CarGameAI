@@ -17,10 +17,11 @@ class Road : public GfxObject
 public:
     Road();
     ~Road();
+    static void GenerateRandomPoints();
     void SetNewPath(glm::vec2 pos);
     void Render(glm::mat4 MVP);
-    bool IsOffRoad(Car* car);
-    glm::vec2* getPositionArray();
+    bool IsOffRoad(Car *car);
+    glm::vec2 *getPositionArray();
     void InitBuffers();
     void SetWidth(float givenWidth)
     {

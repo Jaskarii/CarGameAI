@@ -15,12 +15,11 @@ void CarHandler::Render(glm::mat4 proj, glm::mat4 mvp)
 {
     for (size_t i = 0; i < cars->size(); i++)
     {
-                cars->at(i).Update();
-
+        cars->at(i).Update();
         carVertices[i] = cars->at(i).GetStatus();
     }
     carVertices[yMaxIndex].isCamera = 1;
-    
+
     vbo->Bind();
     glBufferSubData(GL_ARRAY_BUFFER, 0, cars->size() * sizeof(CarVertex), carVertices);
     va->Bind();
@@ -52,7 +51,7 @@ void CarHandler::InitBuffers()
     va->AddBuffer(*vbo, layout);
 }
 
-std::vector<Car>* CarHandler::GetCars()
+std::vector<Car> *CarHandler::GetCars()
 {
     return cars;
 }

@@ -25,24 +25,29 @@
 #include <thread>
 #include <atomic>
 
-GLFWwindow* window;
-Renderer* renderer;
+GLFWwindow *window;
+Renderer *renderer;
 glm::mat4 proj;
 glm::mat4 view = glm::mat4(1.0f);
 glm::mat4 MVP;
 int frames = 0;
 int carWithMaxY = 0;
-std::vector<NeuralNetwork>* networks;
+std::vector<NeuralNetwork> *networks;
 bool isOpenGL = false;
 std::vector<CarGame> games;
 std::vector<std::thread> threads;
 std::atomic<bool> stopFlag(false);
 
-
-const int amountOfCars = 5;
-
 void setCameraTo(glm::vec2 position)
 {
+	// Check if either component of the position is a NaN
+	if (std::isnan(position.x) || std::isnan(position.y))
+	{
+		std::cout << "Invalid position: NaN encountered" << std::endl;
+		// Handle the NaN case, perhaps set a default position or return early
+		return;
+	}
+
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-position.x, -position.y, 0.0f));
 	MVP = proj * view; // Combine the translation with the MVP
 }
@@ -134,30 +139,32 @@ float yMax = 0;
 
 void InitControls()
 {
+	Road::GenerateRandomPoints();
 	renderer = new Renderer();
 	carHandler = new CarHandler();
 	networks = new std::vector<NeuralNetwork>();
-	std::vector<int> layers = {6, 15, 12,12, 2};
+	std::vector<int> layers = {4, 10, 12, 12, 2};
 
-	for (int i = 0; i < amountOfCars; ++i)
+	for (int i = 0; i < 10; ++i)
 	{
 		Car car(0, 0); // Create a Car object and initialize it
 		car.isTraining = false;
 		carHandler->AddCar(car);
-        NeuralNetwork network(layers);
-        networks->push_back(network);	
+		NeuralNetwork network(layers);
+		networks->push_back(network);
 	}
 
 	road = new Road();
 	carHandler->InitBuffers();
-	road ->InitBuffers();
+	road->InitBuffers();
 }
 
 void ResetControls()
-{	yMax = 0;
+{
+	yMax = 0;
 	frames = 0;
-	//Add cars y position to networks fitness score.
-	carHandler-> ResetCars();
+	// Add cars y position to networks fitness score.
+	carHandler->ResetCars();
 }
 
 bool OpenGLRender()
@@ -166,11 +173,13 @@ bool OpenGLRender()
 	{
 		return false;
 	}
-	setCameraTo(carHandler->GetCars()->at(carWithMaxY).GetPosition());
+
+	setCameraTo(carHandler->GetCars()->at(carWithMaxY).getInputs()->position);
 
 	checkGLError();
 	renderer->Clear();
 	road->Render(MVP);
+	UpdateCars(carHandler->GetCars(), road);
 	carHandler->Render(proj, MVP);
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -185,45 +194,38 @@ void OpenGLEnd()
 
 void StartGameThreads()
 {
-	const int numGames = 3;
+	const int numGames = 10;
 
-    // Create game instances
-    for (int i = 0; i < numGames; ++i) 
+	// Create game instances
+	for (int i = 0; i < numGames; ++i)
 	{
-        games.emplace_back(200);
-    }
+		games.emplace_back(600);
+	}
 
 	for (size_t i = 0; i < games.size(); i++)
 	{
+		games[i].index = i;
 		// Subscribe to the network update event with the first handler
-		games[i].networkUpdateEvent.Subscribe([](NeuralNetwork* updatedNetwork) 
-		{
-		// Handle the updated network in the first handler
-		for (size_t i = 0; i < networks->size(); i++)
-		{
-			if (networks->at(i).GetFitness() < updatedNetwork->GetFitness())
+		games[i].networkUpdateEvent.Subscribe(
+			[](NeuralNetwork *updatedNetwork)
 			{
-				networks->at(i).CopyWeights(updatedNetwork);
-				networks->at(i).SetFitness(updatedNetwork->GetFitness());
-				networks->at(i).printWeights();
-				std::cout<< networks->at(i).GetFitness() << std::endl;
-			}
-		}
-		
-		});
+				// Handle the updated network in the first handler
+				networks->at(updatedNetwork->index).CopyWeights(updatedNetwork);
+				networks->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
+			});
 	}
-	
-    // Create and start game threads
-    for (int i = 0; i < numGames; ++i) {
-        threads.emplace_back([&games, i, &stopFlag]() {
-            games[i].StartGame(stopFlag);
-        });
-    }
+
+	// Create and start game threads
+	for (int i = 0; i < numGames; ++i)
+	{
+		threads.emplace_back([i]()
+							 { games[i].StartGame(stopFlag); });
+	}
 }
 
 int main()
 {
-	if(!InitOpenGL())
+	if (!InitOpenGL())
 	{
 		return -1;
 	}
@@ -237,14 +239,14 @@ int main()
 		{
 			break;
 		}
-		UpdateCars(carHandler->GetCars(), road);
 	}
 	OpenGLEnd();
-    stopFlag.store(true, std::memory_order_release);
+	stopFlag.store(true, std::memory_order_release);
 	// Wait for all threads to finish by joining them
-    for (std::thread& thread : threads) {
-        thread.join(); // Properly join each thread
-    }
+	for (std::thread &thread : threads)
+	{
+		thread.join(); // Properly join each thread
+	}
 
 	return 0;
 }
@@ -253,19 +255,19 @@ bool CheckKeyPress(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		carHandler-> GetCars()->front().Rotate(0.03f);
+		carHandler->GetCars()->front().Rotate(0.03f);
 	}
 	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		carHandler-> GetCars()->front().Rotate(-0.03f);	
+		carHandler->GetCars()->front().Rotate(-0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		carHandler-> GetCars()->front().Accelerate(0.03f);
+		carHandler->GetCars()->front().Accelerate(0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		carHandler-> GetCars()->front().Accelerate(-0.03f);
+		carHandler->GetCars()->front().Accelerate(-0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
@@ -288,31 +290,28 @@ bool CheckKeyPress(GLFWwindow *window)
 	return true;
 }
 
-
 void UpdateCars(std::vector<Car> *cars, Road *road)
 {
 	// Initialize variables to track the maximum A value and the corresponding Car.
-    float maxY = cars->at(0).GetStatus().posY;
+	float maxY = cars->at(0).getInputs()->position.y;
 	bool EndRun = true;
-    // Iterate through the vector to find the Car with the highest A value.
-    for (size_t i = 0; i < cars->size(); i++)
-    {	
-		Car& car = cars->at(i);
+	// Iterate through the vector to find the Car with the highest A value.
+	for (int i = 0; i < cars->size(); i++)
+	{
+		Car &car = cars->at(i);
 		if (!car.IsCrashed())
 		{
-			EndRun =false;
+			EndRun = false;
 		}
-		car.SetInputPositions(road->getPositionArray());
 		car.GetAndHandleOutPuts(&(networks->at(i)));
 		car.SetCrashed(road->IsOffRoad(&car));
-        if (car.GetStatus().posY > maxY)
-        {
-            carWithMaxY = i;
-            maxY = car.GetStatus().posY;
-        }
-        car.SetCamera(false);
+		if (car.getInputs()->position.y > maxY)
+		{
+			carWithMaxY = i;
+			maxY = car.getInputs()->position.y;
+		}
+		car.SetCamera(false);
 		car.Update();
-    }
-	
-    cars->at(carWithMaxY).SetCamera(true);
+	}
+	cars->at(carWithMaxY).SetCamera(true);
 }
