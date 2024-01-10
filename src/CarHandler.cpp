@@ -23,15 +23,12 @@ void CarHandler::Render(glm::mat4 proj, glm::mat4 mvp)
     
     vbo->Bind();
     glBufferSubData(GL_ARRAY_BUFFER, 0, cars->size() * sizeof(CarVertex), carVertices);
-
-
     va->Bind();
     shader->Bind();
     shader->SetUniformMat4f("proj", proj);
     shader->SetUniformMat4f("mvp", mvp);
 
     glDrawArrays(GL_POINTS, 0, cars->size());
-    
 }
 
 void CarHandler::AddCar(Car car)
@@ -58,26 +55,6 @@ void CarHandler::InitBuffers()
 std::vector<Car>* CarHandler::GetCars()
 {
     return cars;
-}
-
-Car *CarHandler::GetBestCar()
-{
-    // Initialize variables to track the maximum A value and the corresponding Car.
-    float maxY = cars->at(0).GetStatus().posY;
-    int carWithMaxY = 0;
-
-    // Iterate through the vector to find the Car with the highest A value.
-    for (size_t i = 0; i < cars->size(); i++)
-    {
-        if (cars->at(i).GetStatus().posY > maxY)
-        {
-            carWithMaxY = i;
-            maxY = cars->at(i).GetStatus().posY;
-        }
-        cars->at(i).SetCamera(false);
-    }
-    cars->at(carWithMaxY).SetCamera(true);
-    return &(cars->at(carWithMaxY));
 }
 
 void CarHandler::ResetCars()

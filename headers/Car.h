@@ -1,13 +1,8 @@
 #ifndef CAR_H
 #define CAR_H
-#include <glad/glad.h>
 #include "Shader.h"
-#include "IndexBuffer.h"
-#include "Vertexarray.h"
 #include <string>
-#include "glfw3.h"
 #include "Vector2.h"
-#include "GfxObject.h"
 #include "NeuralNetwork.h"
 
 struct InputSpace
@@ -25,6 +20,7 @@ struct InputSpace
     float dirX = 0.0f;
     float dirY = 0.0f;
     float speed = 0.0f;
+    float distanceFromRoad = 0.0f;
 };
 
 struct OutPuts
@@ -59,9 +55,11 @@ public:
     CarVertex GetStatus();
     void SetCamera(bool isCam);
     void SetInputPositions(glm::vec2 *positions);
+    InputSpace* getInputs();
     void GetAndHandleOutPuts(NeuralNetwork* network);
     float GetFitness();
     int CurrentPathIndex = 1;
+    bool isTraining = true;
 
 private:
     CarVertex carStatus;

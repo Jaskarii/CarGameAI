@@ -1,7 +1,6 @@
 #include "Car.h"
 #include <cmath>
 #include <iostream>
-#include "VertexBufferLayout.h"
 #include "Road.h"
 
 glm::vec2 dirToNextPoint;
@@ -81,6 +80,7 @@ void Car::Reset()
     carStatus.isCamera = 0;
     speed = 0;
     CurrentPathIndex = 1;
+    isCrashed = false;
 }
 
 CarVertex Car::GetStatus()
@@ -104,11 +104,16 @@ void Car::SetInputPositions(glm::vec2 *positions)
     nextDir.y = positions[CurrentPathIndex+1].y - positions[CurrentPathIndex].y;
     nextDir = glm::normalize(nextDir);
 
-    dirToNextPoint.x = inputs.pos1X - carStatus.posX;
-    dirToNextPoint.y = inputs.pos1Y - carStatus.posY;
+    dirToNextPoint.x = inputs.pos1X;
+    dirToNextPoint.y = inputs.pos1Y;
     dirToNextPoint = glm::normalize(dirToNextPoint);
     nextPoint.x = inputs.pos1X;
     nextPoint.y = inputs.pos1Y;
+}
+
+InputSpace* Car::getInputs()
+{
+    return &inputs;
 }
 
 void Car::GetAndHandleOutPuts(NeuralNetwork* network)
@@ -117,13 +122,14 @@ void Car::GetAndHandleOutPuts(NeuralNetwork* network)
     
     float dotDir = glm::dot(direction, dirToNextPoint);
     float dist = glm::distance(nextPoint, GetPosition())/40;
-    network->AddFitness(carStatus.posY/100 + dotDir*10);
+    if (isTraining)
+    {
+        network->AddFitness(2*CurrentPathIndex + dist + dotDir*1 - inputs.distanceFromRoad/10);
+    }
     std::vector<float> inputVector;
     inputVector.clear();
     inputVector.push_back(dirToNextPoint.x);
     inputVector.push_back(dirToNextPoint.y);
-    inputVector.push_back(nextDir.x);
-    inputVector.push_back(nextDir.y);
     inputVector.push_back(carStatus.dirX);
     inputVector.push_back(carStatus.dirY);
     inputVector.push_back(dist);
@@ -131,22 +137,8 @@ void Car::GetAndHandleOutPuts(NeuralNetwork* network)
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
 
-    if (outPuts[0] > 0.0f)
-    {
-        Accelerate(0.03f);
-    }
-    else if(outPuts[1] > 0.0f)
-    {
-        Accelerate(-0.03f);
-    }
-    if (outPuts[2] > 0.0f)
-    {
-        Rotate(0.03f);
-    }
-    else if(outPuts[3] > 0.0f)
-    {
-        Rotate(-0.03f);
-    }
+    Accelerate(outPuts[0]/50);
+    Rotate(outPuts[1]/50);
 }
 
 float Car::GetFitness()

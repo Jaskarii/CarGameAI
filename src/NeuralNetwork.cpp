@@ -1,6 +1,8 @@
 #include "NeuralNetwork.h"
 #include <cmath>
 #include <random>
+#include <iostream>
+#include <fstream>
 
 NeuralNetwork::NeuralNetwork(const std::vector<int> &layers) : layers(layers), fitness(0)
 {
@@ -9,17 +11,17 @@ NeuralNetwork::NeuralNetwork(const std::vector<int> &layers) : layers(layers), f
     Mutate(200);
 }
 
-void NeuralNetwork::CopyWeights(const NeuralNetwork &copyFrom)
+void NeuralNetwork::CopyWeights(NeuralNetwork* copyFrom)
 {
-    if (weights.size() != copyFrom.weights.size()) 
+    if (weights.size() != copyFrom->weights.size()) 
     {
         return;
     }
 
     for (int i = 0; i < weights.size(); ++i) 
     {
-        if (weights[i].size() != copyFrom.weights[i].size() ||
-            weights[i][0].size() != copyFrom.weights[i][0].size())
+        if (weights[i].size() != copyFrom->weights[i].size() ||
+            weights[i][0].size() != copyFrom->weights[i][0].size())
         {
             return;
         }
@@ -28,7 +30,7 @@ void NeuralNetwork::CopyWeights(const NeuralNetwork &copyFrom)
         {
             for (int k = 0; k < weights[i][j].size(); ++k) 
             {
-                weights[i][j][k] = copyFrom.weights[i][j][k];
+                weights[i][j][k] = copyFrom->weights[i][j][k];
             }
         }
     }
@@ -103,15 +105,19 @@ void NeuralNetwork::Mutate(float rate)
             for (auto &weight : neuron)
             {
                 float randomNumber = dist(gen);
-                if (randomNumber > 98)
+                if (rate > 150)
                 {
-                    weight = RandomWeight();
+                    if (randomNumber > 99)
+                    {
+                        weight = RandomWeight();
+                    }
+                    else if (randomNumber > 98)
+                    {
+                        weight = -weight;
+                    }
                 }
-                else if (randomNumber > 90)
-                {
-                    weight = -weight;
-                }
-                else if (randomNumber > 70)
+                
+                if (randomNumber > 70 && randomNumber < 90)
                 {
                     weight += 0.1;
                 }
@@ -154,6 +160,30 @@ std::vector<std::vector<std::vector<float>>> *NeuralNetwork::GetWeights()
 float NeuralNetwork::GetFitness() const
 {
     return fitness;
+}
+
+void NeuralNetwork::printWeights()
+{
+    // Specify the output file name
+    std::ofstream outputFile("weights.txt");
+
+    // Check if the file opened successfully
+    if (!outputFile.is_open()) {
+        std::cout << "Failed to open the output file." << std::endl;
+        return;
+    }
+
+    // Iterate through the weights and write them to the file in rows and columns
+    for (const auto &layer : weights) {
+        for (const auto &neuron : layer) {
+            for (const auto &weight : neuron) {
+                // Set the width for each written weight to ensure alignment
+                outputFile << weight << " ";
+            }
+            outputFile << "\n"; // Start a new line after each neuron
+        }
+        outputFile << "\n"; // Start a new line after each layer
+    }
 }
 
 int NeuralNetwork::CompareTo(const NeuralNetwork &other) const

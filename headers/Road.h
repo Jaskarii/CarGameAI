@@ -38,6 +38,6 @@ private:
     Vertexarray *va;
     IndexBuffer *ibo;
     bool isOffRoad = false;
-    float width = 35.0f;
+    float width = 100.0f;
 };
 #endif

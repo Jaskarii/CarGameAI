@@ -1,5 +1,8 @@
 #include "Car.h"
 #include <vector>
+#include "Vertexarray.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 class CarHandler
 {
@@ -9,7 +12,6 @@ class CarHandler
         void AddCar(Car car);
         void InitBuffers();
         std::vector<Car>* GetCars();
-        Car* GetBestCar();
         void ResetCars();
 
     private:

@@ -1,5 +1,5 @@
 #include "CarHandler.h"
-void CheckKeyPress(GLFWwindow *window);
+bool CheckKeyPress(GLFWwindow *window);
 
 float scale = 1;
 CarHandler *carHandler;

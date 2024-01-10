@@ -60,8 +60,9 @@ bool Road::IsOffRoad(Car* car)
 	{
 		car->CurrentPathIndex++;
 	}
-
-	if (std::min(distance1, distance2) > width)
+	float distancee = std::min(distance1, distance2);
+	car->getInputs()->distanceFromRoad = distancee;
+	if (distancee > width)
 	{
 		return true;
 	}
