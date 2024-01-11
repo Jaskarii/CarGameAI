@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <mutex>
 
-NeuralNetwork* CarGame::globalBestNetwork = nullptr;
+NeuralNetwork *CarGame::globalBestNetwork = nullptr;
 std::mutex lock;
 
 CarGame::CarGame(int amountOfCars)
@@ -28,28 +28,18 @@ void CarGame::GameLoop()
 {
     frames++;
     // Initialize variables to track the maximum A value and the corresponding Car.
-    float maxY = cars->at(0).GetStatus().posY;
     bool EndRun = true;
     // Iterate through the vector to find the Car with the highest A value.
     for (size_t i = 0; i < cars->size(); i++)
     {
         Car &car = cars->at(i);
-        if (!car.IsCrashed())
-        {
-            EndRun = false;
-        }
         bool isOffRoad = road->IsOffRoad(&car);
         car.SetCrashed(isOffRoad);
         car.GetAndHandleOutPuts(&(networks->at(i)));
-        if (car.getInputs()->position.y > maxY)
-        {
-            maxY = car.getInputs()->position.y;
-        }
-        car.SetCamera(false);
         car.Update();
     }
 
-    if ((EndRun && frames > 1500))
+    if (frames > 2000)
     {
         NextGeneration();
         Reset();
@@ -75,13 +65,18 @@ std::vector<NeuralNetwork> *CarGame::GetNetworks()
     return networks;
 }
 
+void CarGame::CopyWeightsFromBest(NeuralNetwork *toNetwork)
+{
+    toNetwork->CopyWeights(bestNetwork);
+}
+
 void CarGame::InitBestNetwork(std::vector<int> layers)
 {
     CarGame::globalBestNetwork = new NeuralNetwork(layers);
-    CarGame::globalBestNetwork->SetFitness(-100000);
+    CarGame::globalBestNetwork->SetFitness(0);
 }
 
-void *CarGame::UpdateGlobalNetwork(NeuralNetwork* candidate)
+void *CarGame::UpdateGlobalNetwork(NeuralNetwork *candidate)
 {
     lock.lock();
     if (candidate->GetFitness() > CarGame::globalBestNetwork->GetFitness())
@@ -89,11 +84,16 @@ void *CarGame::UpdateGlobalNetwork(NeuralNetwork* candidate)
         CarGame::globalBestNetwork->CopyWeights(candidate);
         CarGame::globalBestNetwork->SetFitness(candidate->GetFitness());
     }
-    else if (candidate->GetFitness() < CarGame::globalBestNetwork->GetFitness())
-    {
-        candidate->CopyWeights(CarGame::globalBestNetwork);
-    }
     lock.unlock();
+    return nullptr;
+}
+
+void *CarGame::UpdateFromGlobalNetwork(NeuralNetwork *candidate)
+{
+    lock.lock();
+    candidate->CopyWeights(globalBestNetwork);
+    lock.unlock();
+    return nullptr;
 }
 
 void CarGame::StartGame(std::atomic<bool> &stopFlag)
@@ -113,35 +113,29 @@ void CarGame::NextGeneration()
                   return a.CompareTo(b) > 0; // Use CompareTo for comparison
               });
 
-    for (size_t i = 0; i < 1; i++)
+    float fitnn = networks->at(0).GetFitness();
+    if (fitnn > bestNetwork->GetFitness())
     {
-        float fitnn = networks->at(i).GetFitness();
-        if (fitnn > bestNetwork->GetFitness())
-        {
-            bestNetwork->CopyWeights(&(networks->at(i)));
-            bestNetwork->SetFitness(fitnn);
-            bestNetwork->index = index;
-            networkUpdateEvent.UpdateBestNetwork(bestNetwork);
-            UpdateGlobalNetwork(bestNetwork);
-        }
+        bestNetwork->CopyWeights(&(networks->at(0)));
+        bestNetwork->SetFitness(fitnn);
+        bestNetwork->index = index;
+        networkUpdateEvent.UpdateBestNetwork(bestNetwork);
+        UpdateGlobalNetwork(bestNetwork);
     }
 
-    if (networks->at(0).GetFitness() < bestNetwork->GetFitness())
+    for (size_t i = 0; i < 2; i++)
     {
-        for (size_t i = 0; i < 10; i++)
-        {
-            networks->at(i).CopyWeights(bestNetwork);
-        }
+        UpdateFromGlobalNetwork(&(networks->at(i)));
     }
-    
+
     for (size_t i = 0; i < networks->size(); i++)
     {
         networks->at(i).SetFitness(0);
-        if (i < 50)
+        if (i < 30)
         {
             continue;
         }
-        int asd = i % 50;
+        int asd = i % 30;
         networks->at(i).CopyWeights(&(networks->at(asd)));
         networks->at(i).Mutate(i);
     }

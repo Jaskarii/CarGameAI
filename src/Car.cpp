@@ -35,7 +35,7 @@ void Car::Update()
 {
     if (isCrashed)
     {
-        speed = 0.02f;
+        speed = 0.0f;
     }
     inputs.position += inputs.direction * speed;
 }
@@ -58,7 +58,7 @@ void Car::Rotate(float angle)
 void Car::Accelerate(float acc)
 {
     speed += acc;
-    speed = std::min(speed, 4.0f);
+    speed = std::min(speed, 3.0f);
     speed = std::max(speed, 0.0f);
 }
 
@@ -66,22 +66,17 @@ void Car::SetCrashed(bool crashed)
 {
     isCrashed = crashed;
 }
+
 int maxxy = 0;
 int counter = 0;
+
 bool Car::IsCrashed()
 {
-    if (speed < 0.1f || (maxxy + 2 > inputs.position.y))
-    {
-        counter++;
-    }else
-    {
-        maxxy = inputs.position.y;
-        counter = 0;
-    }
-
-    return counter > 5;
+    return isCrashed;
 }
+
 int previousPathIndex = 1;
+float prevDistance = 0;
 
 void Car::Reset()
 {
@@ -100,6 +95,9 @@ void Car::Reset()
     CurrentPathIndex = 1;
     isCrashed = false;
     previousPathIndex = 1;
+    maxxy = 0;
+    counter = 0;
+    prevDistance = 0;
 }
 
 CarVertex Car::GetStatus()
@@ -121,30 +119,25 @@ InputSpace *Car::getInputs()
     return &inputs;
 }
 
+float fit1Max, fit1Min, fit2Max, fit2Min, fit3Max, fit3Min = 0;
+
 float maxrelativeAngle, minrelativeAngle, maxDistane, minDistance, MaxnormalizeDistanceFromRoad, MinnormalizeDistanceFromRoad = 0;
-float prevDistance = 0;
 void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 {
     std::vector<float> inputVector;
     float relativeAngle = calculateRelativeAngle();
     float distanceToNext = glm::fastDistance(inputs.nextPoint, inputs.position);
     float advanced = prevDistance - distanceToNext;
+
     prevDistance = distanceToNext;
-    distanceToNext = distanceToNext/600;
-    distanceToNext = std::max(1.0f, distanceToNext);
+    distanceToNext = distanceToNext / 600;
+    distanceToNext = std::min(1.0f, distanceToNext);
     float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100;
     inputVector.clear();
     inputVector.push_back(relativeAngle / 3);
     inputVector.push_back(distanceToNext);
     inputVector.push_back(normalizeDistanceFromRoad);
-    inputVector.push_back(speed / 4);
-
-    maxrelativeAngle = std::max(relativeAngle, maxrelativeAngle);
-    minrelativeAngle = std::min(relativeAngle, minrelativeAngle);
-    maxDistane = std::max(distanceToNext, maxDistane);
-    minDistance = std::min(distanceToNext, minDistance);
-    MaxnormalizeDistanceFromRoad = std::max(normalizeDistanceFromRoad, MaxnormalizeDistanceFromRoad);
-    MinnormalizeDistanceFromRoad = std::min(normalizeDistanceFromRoad, MinnormalizeDistanceFromRoad);
+    inputVector.push_back(speed / 3);
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
 
@@ -153,13 +146,9 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 
     if (isTraining)
     {
-        if (CurrentPathIndex > previousPathIndex)
-        {
-            network->AddFitness(20000);
-            previousPathIndex = CurrentPathIndex;
-        }
-        
-        network->AddFitness(-std::abs(relativeAngle)*10 -normalizeDistanceFromRoad*3 +advanced/100);
+        float asdddd = std::abs(relativeAngle);
+        float fitnessScore = advanced - asdddd - normalizeDistanceFromRoad;
+        network->AddFitness(advanced - asdddd - normalizeDistanceFromRoad);
     }
     // The higher the better.
 }
@@ -176,11 +165,6 @@ float Car::calculateRelativeAngle()
     if (crossProduct < 0)
     {
         angle = -angle; // Turn right
-    }
-
-    if (std::isnan(angle))
-    {
-        int u = 0;
     }
 
     return angle;

@@ -63,10 +63,6 @@ bool Road::IsOffRoad(Car *car)
 	glm::vec2 position = inputs->position;
 	int currentIndex = car->CurrentPathIndex;
 	float distance1 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex - 1]);
-	if (distance1 < width)
-	{
-		return false;
-	}
 	float distance2 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex + 1]);
 
 	if (distance1 > distance2)

@@ -105,7 +105,7 @@ void NeuralNetwork::Mutate(int rate)
             for (auto &weight : neuron)
             {
                 float randomNumber = dist(gen);
-                if (rate > 200)
+                if (rate > 120)
                 {
                     if (randomNumber > 99)
                     {
@@ -138,7 +138,7 @@ float NeuralNetwork::RandomWeight()
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
-    static std::uniform_real_distribution<float> dist(-0.5f, 0.5f);
+    static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
     return dist(gen);
 }
 

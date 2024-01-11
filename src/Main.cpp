@@ -143,15 +143,15 @@ void InitControls()
 	renderer = new Renderer();
 	carHandler = new CarHandler();
 	networks = new std::vector<NeuralNetwork>();
-	std::vector<int> layers = {4, 10, 12, 12, 2};
+	std::vector<int> layers = {4, 10, 10, 10, 2};
 	CarGame::InitBestNetwork(layers);
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 6; ++i)
 	{
 		Car car(0, 0); // Create a Car object and initialize it
 		car.isTraining = false;
 		carHandler->AddCar(car);
 		NeuralNetwork network(layers);
-		network.SetFitness(-10000000);
+		network.SetFitness(-1000000);
 		networks->push_back(network);
 	}
 
@@ -175,12 +175,11 @@ bool OpenGLRender()
 		return false;
 	}
 
-	setCameraTo(carHandler->GetCars()->at(carWithMaxY).getInputs()->position);
+	UpdateCars(carHandler->GetCars(), road);
 
 	checkGLError();
 	renderer->Clear();
 	road->Render(MVP);
-	UpdateCars(carHandler->GetCars(), road);
 	carHandler->Render(proj, MVP);
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -195,12 +194,12 @@ void OpenGLEnd()
 
 void StartGameThreads()
 {
-	const int numGames = 10;
+	const int numGames = 6;
 
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(300);
+		games.emplace_back(350);
 	}
 
 	for (size_t i = 0; i < games.size(); i++)
@@ -213,7 +212,7 @@ void StartGameThreads()
 				// Handle the updated network in the first handler
 				networks->at(updatedNetwork->index).CopyWeights(updatedNetwork);
 				networks->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
-				std:: cout << updatedNetwork->GetFitness() << std::endl;
+				std::cout << updatedNetwork->GetFitness() << " " << updatedNetwork->index << std::endl;
 			});
 	}
 
@@ -296,18 +295,13 @@ void UpdateCars(std::vector<Car> *cars, Road *road)
 {
 	// Initialize variables to track the maximum A value and the corresponding Car.
 	float maxY = cars->at(0).getInputs()->position.y;
-	bool EndRun = true;
 	// Iterate through the vector to find the Car with the highest A value.
 	for (int i = 0; i < cars->size(); i++)
 	{
 		Car &car = cars->at(i);
-		if (!car.IsCrashed())
-		{
-			EndRun = false;
-		}
 		car.GetAndHandleOutPuts(&(networks->at(i)));
 		car.SetCrashed(road->IsOffRoad(&car));
-		if (car.getInputs()->position.y > maxY)
+		if (car.GetStatus().posY > maxY)
 		{
 			carWithMaxY = i;
 			maxY = car.getInputs()->position.y;
@@ -316,4 +310,5 @@ void UpdateCars(std::vector<Car> *cars, Road *road)
 		car.Update();
 	}
 	cars->at(carWithMaxY).SetCamera(true);
+	setCameraTo(cars->at(carWithMaxY).getInputs()->position);
 }

@@ -16,13 +16,14 @@ public:
     std::vector<NeuralNetwork> *GetNetworks();
     NetworkUpdateEvent networkUpdateEvent; // Event handler
     std::vector<Car> *GetCars();
+    void CopyWeightsFromBest(NeuralNetwork *toNetwork);
     static void InitBestNetwork(std::vector<int> layers);
-    static void* UpdateGlobalNetwork(NeuralNetwork* candidate);
-    static void* UpdateFromGlobalNetwork(NeuralNetwork* candidate);
+    static void *UpdateGlobalNetwork(NeuralNetwork *candidate);
+    static void *UpdateFromGlobalNetwork(NeuralNetwork *candidate);
     bool training = true;
     void StartGame(std::atomic<bool> &stopFlag);
     int index = 0;
-    static NeuralNetwork* globalBestNetwork;
+    static NeuralNetwork *globalBestNetwork;
 
 private:
     std::vector<NeuralNetwork> *networks;
