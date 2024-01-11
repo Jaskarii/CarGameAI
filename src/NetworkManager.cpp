@@ -40,7 +40,7 @@ void NetworkManager::NextGeneration()
 
     for (size_t i = 0; i < networks->size(); i++)
     {
-        networks->at(i).SetFitness(0);
+        networks->at(i).SetFitness(-10000);
         if (i < 50)
         {
             continue;

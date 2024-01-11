@@ -144,13 +144,14 @@ void InitControls()
 	carHandler = new CarHandler();
 	networks = new std::vector<NeuralNetwork>();
 	std::vector<int> layers = {4, 10, 12, 12, 2};
-
+	CarGame::InitBestNetwork(layers);
 	for (int i = 0; i < 10; ++i)
 	{
 		Car car(0, 0); // Create a Car object and initialize it
 		car.isTraining = false;
 		carHandler->AddCar(car);
 		NeuralNetwork network(layers);
+		network.SetFitness(-10000000);
 		networks->push_back(network);
 	}
 
@@ -199,7 +200,7 @@ void StartGameThreads()
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(600);
+		games.emplace_back(300);
 	}
 
 	for (size_t i = 0; i < games.size(); i++)
@@ -212,6 +213,7 @@ void StartGameThreads()
 				// Handle the updated network in the first handler
 				networks->at(updatedNetwork->index).CopyWeights(updatedNetwork);
 				networks->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
+				std:: cout << updatedNetwork->GetFitness() << std::endl;
 			});
 	}
 

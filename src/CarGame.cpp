@@ -1,6 +1,10 @@
 #include "CarGame.h"
 #include <iostream>
 #include <algorithm>
+#include <mutex>
+
+NeuralNetwork* CarGame::globalBestNetwork = nullptr;
+std::mutex lock;
 
 CarGame::CarGame(int amountOfCars)
 {
@@ -8,9 +12,9 @@ CarGame::CarGame(int amountOfCars)
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    std::vector<int> layers = {6, 15, 12, 12, 2};
+    std::vector<int> layers = {4, 10, 12, 12, 2};
     bestNetwork = new NeuralNetwork(layers);
-
+    bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
     {
         Car car(0, 0); // Create a Car object and initialize it
@@ -45,7 +49,7 @@ void CarGame::GameLoop()
         car.Update();
     }
 
-    if ((EndRun && frames > 200) || (frames > 200 + 2 * generation))
+    if ((EndRun && frames > 1500))
     {
         NextGeneration();
         Reset();
@@ -69,6 +73,27 @@ NeuralNetwork *CarGame::GetBestNetwork()
 std::vector<NeuralNetwork> *CarGame::GetNetworks()
 {
     return networks;
+}
+
+void CarGame::InitBestNetwork(std::vector<int> layers)
+{
+    CarGame::globalBestNetwork = new NeuralNetwork(layers);
+    CarGame::globalBestNetwork->SetFitness(-100000);
+}
+
+void *CarGame::UpdateGlobalNetwork(NeuralNetwork* candidate)
+{
+    lock.lock();
+    if (candidate->GetFitness() > CarGame::globalBestNetwork->GetFitness())
+    {
+        CarGame::globalBestNetwork->CopyWeights(candidate);
+        CarGame::globalBestNetwork->SetFitness(candidate->GetFitness());
+    }
+    else if (candidate->GetFitness() < CarGame::globalBestNetwork->GetFitness())
+    {
+        candidate->CopyWeights(CarGame::globalBestNetwork);
+    }
+    lock.unlock();
 }
 
 void CarGame::StartGame(std::atomic<bool> &stopFlag)
@@ -97,9 +122,18 @@ void CarGame::NextGeneration()
             bestNetwork->SetFitness(fitnn);
             bestNetwork->index = index;
             networkUpdateEvent.UpdateBestNetwork(bestNetwork);
+            UpdateGlobalNetwork(bestNetwork);
         }
     }
 
+    if (networks->at(0).GetFitness() < bestNetwork->GetFitness())
+    {
+        for (size_t i = 0; i < 10; i++)
+        {
+            networks->at(i).CopyWeights(bestNetwork);
+        }
+    }
+    
     for (size_t i = 0; i < networks->size(); i++)
     {
         networks->at(i).SetFitness(0);

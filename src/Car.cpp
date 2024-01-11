@@ -35,7 +35,7 @@ void Car::Update()
 {
     if (isCrashed)
     {
-        speed = 0.0f;
+        speed = 0.02f;
     }
     inputs.position += inputs.direction * speed;
 }
@@ -66,21 +66,22 @@ void Car::SetCrashed(bool crashed)
 {
     isCrashed = crashed;
 }
-
+int maxxy = 0;
 int counter = 0;
 bool Car::IsCrashed()
 {
-    if (speed < 0.5f)
+    if (speed < 0.1f || (maxxy + 2 > inputs.position.y))
     {
         counter++;
-    }
-    else
+    }else
     {
+        maxxy = inputs.position.y;
         counter = 0;
     }
 
     return counter > 5;
 }
+int previousPathIndex = 1;
 
 void Car::Reset()
 {
@@ -98,6 +99,7 @@ void Car::Reset()
     speed = 0;
     CurrentPathIndex = 1;
     isCrashed = false;
+    previousPathIndex = 1;
 }
 
 CarVertex Car::GetStatus()
@@ -120,12 +122,15 @@ InputSpace *Car::getInputs()
 }
 
 float maxrelativeAngle, minrelativeAngle, maxDistane, minDistance, MaxnormalizeDistanceFromRoad, MinnormalizeDistanceFromRoad = 0;
-
+float prevDistance = 0;
 void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 {
     std::vector<float> inputVector;
     float relativeAngle = calculateRelativeAngle();
-    float distanceToNext = glm::fastDistance(inputs.nextPoint, inputs.position) / 600;
+    float distanceToNext = glm::fastDistance(inputs.nextPoint, inputs.position);
+    float advanced = prevDistance - distanceToNext;
+    prevDistance = distanceToNext;
+    distanceToNext = distanceToNext/600;
     distanceToNext = std::max(1.0f, distanceToNext);
     float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100;
     inputVector.clear();
@@ -143,17 +148,18 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
 
-    if (std::isnan(outPuts[1]) || std::isnan(outPuts[0]))
-    {
-        int a = 0;
-    }
-
-    Accelerate(outPuts[0] / 40);
-    Rotate(outPuts[1] / 40);
+    Accelerate(outPuts[0] / 30);
+    Rotate(outPuts[1] / 30);
 
     if (isTraining)
     {
-        network->AddFitness(inputs.position.y / 50 + CurrentPathIndex - std::abs(relativeAngle));
+        if (CurrentPathIndex > previousPathIndex)
+        {
+            network->AddFitness(20000);
+            previousPathIndex = CurrentPathIndex;
+        }
+        
+        network->AddFitness(-std::abs(relativeAngle)*10 -normalizeDistanceFromRoad*3 +advanced/100);
     }
     // The higher the better.
 }
