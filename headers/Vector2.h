@@ -4,7 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp> // For glm::length2
 
-static float DistanceToLineSegment(const glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B)
+static float DistanceToLineSegment(glm::vec2 &P, const glm::vec2 &A, const glm::vec2 &B)
 {
     glm::vec2 AP = P - A, AB = B - A;
     float AB_squared = glm::length2(AB); // Squared length of AB

@@ -5,6 +5,22 @@
 
 static std::vector<glm::vec2> roadPoints;
 
+float calculateRelativeAngle(glm::vec2 v1, glm::vec2 v2)
+{
+    float dot = glm::dot(v1, v2);
+    dot = std::max(-1.0f, std::min(1.0f, dot));
+
+    float angle = std::acos(dot); // Angle in radians
+
+    // Determine the direction of the turn
+    float crossProduct = v1.x * v2.y - v1.y * v2.x;
+    if (crossProduct < 0)
+    {
+        angle = -angle; // Turn right
+    }
+    return angle;
+}
+
 void Road::GenerateRandomPoints()
 {
 	roadPoints.push_back(glm::vec2(0.0f, -100.0f));
@@ -60,32 +76,42 @@ void Road::Render(glm::mat4 MVP)
 bool Road::IsOffRoad(Car *car)
 {
 	InputSpace *inputs = car->getInputs();
-	glm::vec2 position = inputs->position;
 	int currentIndex = car->CurrentPathIndex;
-	float distance1 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex - 1]);
-	float distance2 = DistanceToLineSegment(position, positions[currentIndex], positions[currentIndex + 1]);
+	float distance1 = DistanceToLineSegment(inputs->position, positions[currentIndex], positions[currentIndex - 1]);
+	float distance2 = DistanceToLineSegment(inputs->position, positions[currentIndex], positions[currentIndex + 1]);
 
 	if (distance1 > distance2)
 	{
 		car->CurrentPathIndex++;
 		currentIndex++;
-		glm::vec2 roadDir;
-		roadDir.x = positions[currentIndex].x - positions[currentIndex - 1].x;
-		roadDir.y = positions[currentIndex].y - positions[currentIndex - 1].y;
-		inputs->roadDirection = glm::normalize(roadDir);
-		inputs->nextPoint.x = positions[car->CurrentPathIndex].x;
-		inputs->nextPoint.y = positions[car->CurrentPathIndex].y;
-		inputs->nextPointAfter.x = positions[car->CurrentPathIndex + 1].x;
-		inputs->nextPointAfter.y = positions[car->CurrentPathIndex + 1].y;
+		UpdateCarStatus(car, currentIndex);
 	}
+
 	float distancee = std::min(distance1, distance2);
-	car->getInputs()->distanceFromRoad = distancee;
+	inputs->distanceFromRoad = distancee;
 	if (distancee > width)
 	{
 		return true;
 	}
-
 	return false;
+}
+
+void Road::UpdateCarStatus(Car *car, int ctPathIndex)
+{
+	InputSpace *inputs = car->getInputs();
+	glm::vec2 roadDir;
+	roadDir.x = positions[ctPathIndex].x - positions[ctPathIndex - 1].x;
+	roadDir.y = positions[ctPathIndex].y - positions[ctPathIndex - 1].y;
+	inputs->roadDirection = glm::normalize(roadDir);
+	inputs->nextPoint.x = positions[ctPathIndex].x;
+	inputs->nextPoint.y = positions[ctPathIndex].y;
+	inputs->nextPointAfter.x = positions[ctPathIndex + 1].x;
+	inputs->nextPointAfter.y = positions[ctPathIndex + 1].y;
+	glm::vec2 nextRoadDir;
+	nextRoadDir.x = positions[ctPathIndex+1].x - positions[ctPathIndex].x;
+	nextRoadDir.y = positions[ctPathIndex+1].y - positions[ctPathIndex].y;
+	float relativeCornerAngle = calculateRelativeAngle(glm::normalize(roadDir), glm::normalize(nextRoadDir));
+	inputs->angleOfNextIntersection = relativeCornerAngle;
 }
 
 glm::vec2 *Road::getPositionArray()
@@ -106,6 +132,7 @@ void Road::InitBuffers()
 	layout.PushFloat(2);
 	va->AddBuffer(*vbo, layout);
 }
+
 
 void Road::SetNewPath(glm::vec2 pos)
 {
@@ -131,3 +158,5 @@ void Road::SetNewPath(glm::vec2 pos)
 
 	vertexCount++;
 }
+
+

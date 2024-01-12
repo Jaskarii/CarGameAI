@@ -23,6 +23,7 @@ public:
     bool IsOffRoad(Car *car);
     glm::vec2 *getPositionArray();
     void InitBuffers();
+    void UpdateCarStatus(Car *car, int ctPathIndex);
     void SetWidth(float givenWidth)
     {
         width = givenWidth;

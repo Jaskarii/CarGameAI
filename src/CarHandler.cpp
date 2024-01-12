@@ -47,7 +47,6 @@ void CarHandler::InitBuffers()
     layout.PushFloat(2);
     layout.PushFloat(2);
     layout.PushUInt(1);
-
     va->AddBuffer(*vbo, layout);
 }
 
@@ -58,10 +57,7 @@ std::vector<Car> *CarHandler::GetCars()
 
 void CarHandler::ResetCars()
 {
-    for (size_t i = 0; i < cars->size(); i++)
-    {
-        cars->at(i).Reset();
-    }
+    
 }
 
 #endif

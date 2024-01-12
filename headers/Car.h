@@ -12,6 +12,7 @@ struct InputSpace
     glm::vec2 roadDirection;
     glm::vec2 position;
     glm::vec2 direction;
+    float angleOfNextIntersection;
     float speed = 0.0f;
     float distanceFromRoad = 0.0f;
 };
@@ -50,13 +51,15 @@ public:
     void GetAndHandleOutPuts(NeuralNetwork *network);
     int CurrentPathIndex = 1;
     bool isTraining = true;
+    bool hasAdvanced = true;
 
 private:
     float calculateRelativeAngle();
     CarVertex carStatus;
-    float *positions;
     float speed = 0;
     bool isCrashed = false;
+    float prevDistance = 0;
+    int previousPathIndex = 1;
     InputSpace inputs;
 };
 #endif // CAR_H

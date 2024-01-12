@@ -2,47 +2,74 @@
 #include <iostream>
 #include <algorithm>
 #include <mutex>
+#include <thread>
+#include <chrono>
 
 NeuralNetwork *CarGame::globalBestNetwork = nullptr;
 std::mutex lock;
 
-CarGame::CarGame(int amountOfCars)
+CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(isTraining), control(isControl)
 {
     cars = new std::vector<Car>();
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    std::vector<int> layers = {4, 10, 12, 12, 2};
+    std::vector<int> layers = {5, 12, 12, 10, 2};
     bestNetwork = new NeuralNetwork(layers);
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
     {
-        Car car(0, 0); // Create a Car object and initialize it
+        Car car(0, i*100); // Create a Car object and initialize it
+        car.isTraining = training;
         cars->push_back(car);
         NeuralNetwork network(layers);
         networks->push_back(network);
     }
+    Reset();
 }
 
 void CarGame::GameLoop()
 {
-    frames++;
     // Initialize variables to track the maximum A value and the corresponding Car.
     bool EndRun = true;
     // Iterate through the vector to find the Car with the highest A value.
+    float maxY = 0;
     for (size_t i = 0; i < cars->size(); i++)
     {
         Car &car = cars->at(i);
+        car.Update();
         bool isOffRoad = road->IsOffRoad(&car);
         car.SetCrashed(isOffRoad);
-        car.GetAndHandleOutPuts(&(networks->at(i)));
-        car.Update();
+        if (!control)
+        {
+            car.GetAndHandleOutPuts(&(networks->at(i)));
+        }
+        EndRun = !car.hasAdvanced;
+        if (maxY < car.getInputs()->position.y)
+        {
+            maxY = car.getInputs()->position.y;
+            maxYIndex = i;
+        }
     }
 
-    if (frames > 2000)
+    if (training)
     {
-        NextGeneration();
-        Reset();
+        frames++;
+        if (frames > 2000)
+        {
+            NextGeneration();
+            Reset();
+        }
+    }
+    
+
+    if (EndRun || frames > 3000)
+    {
+        if (training)
+        {
+            NextGeneration();
+            Reset();
+        }
     }
 }
 
@@ -52,6 +79,7 @@ void CarGame::Reset()
     for (size_t i = 0; i < cars->size(); i++)
     {
         cars->at(i).Reset();
+        road->UpdateCarStatus(&(cars->at(i)),1);
     }
 }
 
@@ -63,6 +91,16 @@ NeuralNetwork *CarGame::GetBestNetwork()
 std::vector<NeuralNetwork> *CarGame::GetNetworks()
 {
     return networks;
+}
+
+std::vector<Car> *CarGame::GetCars()
+{
+    return cars;
+}
+
+glm::vec2 CarGame::GetCameraPosition()
+{
+    return glm::vec2(cars->at(maxYIndex).getInputs()->position);
 }
 
 void CarGame::CopyWeightsFromBest(NeuralNetwork *toNetwork)
@@ -83,6 +121,7 @@ void *CarGame::UpdateGlobalNetwork(NeuralNetwork *candidate)
     {
         CarGame::globalBestNetwork->CopyWeights(candidate);
         CarGame::globalBestNetwork->SetFitness(candidate->GetFitness());
+        std::cout << "global updated" << globalBestNetwork->GetFitness() << std::endl;
     }
     lock.unlock();
     return nullptr;
@@ -101,7 +140,45 @@ void CarGame::StartGame(std::atomic<bool> &stopFlag)
     while (!stopFlag.load(std::memory_order_acquire))
     {
         GameLoop();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
+}
+
+void CarGame::InitBuffers()
+{
+    int carCount = cars->size();
+    carVertices = new CarVertex[carCount];
+    vbo = new VertexBuffer(carVertices, carCount * sizeof(CarVertex));
+
+    shader = new Shader("../shaders/Car.glsl");
+    va = new Vertexarray();
+    VertexBufferLayout layout;
+    layout.PushFloat(2);
+    layout.PushFloat(2);
+    layout.PushUInt(1);
+    va->AddBuffer(*vbo, layout);
+    road->InitBuffers();
+}
+
+void CarGame::Render(glm::mat4 proj, glm::mat4 mvp)
+{
+    road->Render(mvp);
+
+    for (size_t i = 0; i < cars->size(); i++)
+    {
+        cars->at(i).Update();
+        carVertices[i] = cars->at(i).GetStatus();
+    }
+    carVertices[maxYIndex].isCamera = 1;
+
+    vbo->Bind();
+    glBufferSubData(GL_ARRAY_BUFFER, 0, cars->size() * sizeof(CarVertex), carVertices);
+    va->Bind();
+    shader->Bind();
+    shader->SetUniformMat4f("proj", proj);
+    shader->SetUniformMat4f("mvp", mvp);
+
+    glDrawArrays(GL_POINTS, 0, cars->size());
 }
 
 void CarGame::NextGeneration()
@@ -114,6 +191,7 @@ void CarGame::NextGeneration()
               });
 
     float fitnn = networks->at(0).GetFitness();
+    std::cout << fitnn << " " << index << std::endl;
     if (fitnn > bestNetwork->GetFitness())
     {
         bestNetwork->CopyWeights(&(networks->at(0)));

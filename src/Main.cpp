@@ -37,6 +37,7 @@ bool isOpenGL = false;
 std::vector<CarGame> games;
 std::vector<std::thread> threads;
 std::atomic<bool> stopFlag(false);
+CarGame* mainGame;
 
 void setCameraTo(glm::vec2 position)
 {
@@ -105,25 +106,10 @@ bool InitOpenGL()
 		glfwTerminate();
 		return false;
 	}
-	// Make the OpenGL context associated with the window current
-	glfwMakeContextCurrent(window);
 
-	// Initialize GLEW or load OpenGL function pointers (if using GLEW/Glad)
-	// glewInit(); // For GLEW initialization
+	glfwMakeContextCurrent(window);
 	gladLoadGL();
 
-	ImGui::CreateContext();
-	ImGuiIO &io = ImGui::GetIO();
-	(void)io;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	// ImGui::StyleColorsLight();
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -141,23 +127,11 @@ void InitControls()
 {
 	Road::GenerateRandomPoints();
 	renderer = new Renderer();
-	carHandler = new CarHandler();
-	networks = new std::vector<NeuralNetwork>();
-	std::vector<int> layers = {4, 10, 10, 10, 2};
+	std::vector<int> layers = {5, 10, 10, 10, 2};
 	CarGame::InitBestNetwork(layers);
-	for (int i = 0; i < 6; ++i)
-	{
-		Car car(0, 0); // Create a Car object and initialize it
-		car.isTraining = false;
-		carHandler->AddCar(car);
-		NeuralNetwork network(layers);
-		network.SetFitness(-1000000);
-		networks->push_back(network);
-	}
-
-	road = new Road();
-	carHandler->InitBuffers();
-	road->InitBuffers();
+	mainGame = new CarGame(6, false, false);
+	mainGame->InitBuffers();
+	setCameraTo(glm::vec2(0,0));
 }
 
 void ResetControls()
@@ -165,7 +139,7 @@ void ResetControls()
 	yMax = 0;
 	frames = 0;
 	// Add cars y position to networks fitness score.
-	carHandler->ResetCars();
+	mainGame->Reset();
 }
 
 bool OpenGLRender()
@@ -175,12 +149,11 @@ bool OpenGLRender()
 		return false;
 	}
 
-	UpdateCars(carHandler->GetCars(), road);
-
 	checkGLError();
 	renderer->Clear();
-	road->Render(MVP);
-	carHandler->Render(proj, MVP);
+	setCameraTo(mainGame->GetCameraPosition());
+	mainGame->Render(proj, MVP);
+
 	glfwSwapBuffers(window);
 	glfwPollEvents();
 	return true;
@@ -199,7 +172,7 @@ void StartGameThreads()
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(350);
+		games.emplace_back(350, true, false);
 	}
 
 	for (size_t i = 0; i < games.size(); i++)
@@ -210,8 +183,9 @@ void StartGameThreads()
 			[](NeuralNetwork *updatedNetwork)
 			{
 				// Handle the updated network in the first handler
-				networks->at(updatedNetwork->index).CopyWeights(updatedNetwork);
-				networks->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
+
+				mainGame->GetNetworks()->at(updatedNetwork->index).CopyWeights(updatedNetwork);
+				mainGame->GetNetworks()->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
 				std::cout << updatedNetwork->GetFitness() << " " << updatedNetwork->index << std::endl;
 			});
 	}
@@ -240,6 +214,7 @@ int main()
 		{
 			break;
 		}
+		mainGame->GameLoop();
 	}
 	OpenGLEnd();
 	stopFlag.store(true, std::memory_order_release);
@@ -256,19 +231,19 @@ bool CheckKeyPress(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		carHandler->GetCars()->front().Rotate(0.03f);
+		mainGame->GetCars()->front().Rotate(0.03f);
 	}
 	else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		carHandler->GetCars()->front().Rotate(-0.03f);
+		mainGame->GetCars()->front().Rotate(-0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		carHandler->GetCars()->front().Accelerate(0.03f);
+		mainGame->GetCars()->front().Accelerate(0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		carHandler->GetCars()->front().Accelerate(-0.03f);
+		mainGame->GetCars()->front().Accelerate(-0.03f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
@@ -289,26 +264,4 @@ bool CheckKeyPress(GLFWwindow *window)
 		ResetControls();
 	}
 	return true;
-}
-
-void UpdateCars(std::vector<Car> *cars, Road *road)
-{
-	// Initialize variables to track the maximum A value and the corresponding Car.
-	float maxY = cars->at(0).getInputs()->position.y;
-	// Iterate through the vector to find the Car with the highest A value.
-	for (int i = 0; i < cars->size(); i++)
-	{
-		Car &car = cars->at(i);
-		car.GetAndHandleOutPuts(&(networks->at(i)));
-		car.SetCrashed(road->IsOffRoad(&car));
-		if (car.GetStatus().posY > maxY)
-		{
-			carWithMaxY = i;
-			maxY = car.getInputs()->position.y;
-		}
-		car.SetCamera(false);
-		car.Update();
-	}
-	cars->at(carWithMaxY).SetCamera(true);
-	setCameraTo(cars->at(carWithMaxY).getInputs()->position);
 }
