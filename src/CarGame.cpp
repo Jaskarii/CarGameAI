@@ -19,7 +19,7 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
     {
-        Car car(0, i*100); // Create a Car object and initialize it
+        Car car(0, i * 100); // Create a Car object and initialize it
         car.isTraining = training;
         cars->push_back(car);
         NeuralNetwork network(layers);
@@ -38,8 +38,7 @@ void CarGame::GameLoop()
     {
         Car &car = cars->at(i);
         car.Update();
-        bool isOffRoad = road->IsOffRoad(&car);
-        car.SetCrashed(isOffRoad);
+        road->UpdateCarStatus(&car);
         if (!control)
         {
             car.GetAndHandleOutPuts(&(networks->at(i)));
@@ -55,17 +54,7 @@ void CarGame::GameLoop()
     if (training)
     {
         frames++;
-        if (frames > 2000)
-        {
-            NextGeneration();
-            Reset();
-        }
-    }
-    
-
-    if (EndRun || frames > 3000)
-    {
-        if (training)
+        if (EndRun || frames > 2000)
         {
             NextGeneration();
             Reset();
@@ -79,7 +68,7 @@ void CarGame::Reset()
     for (size_t i = 0; i < cars->size(); i++)
     {
         cars->at(i).Reset();
-        road->UpdateCarStatus(&(cars->at(i)),1);
+        road->InitNewPathSegment(&(cars->at(i)), 1);
     }
 }
 
@@ -111,7 +100,7 @@ void CarGame::CopyWeightsFromBest(NeuralNetwork *toNetwork)
 void CarGame::InitBestNetwork(std::vector<int> layers)
 {
     CarGame::globalBestNetwork = new NeuralNetwork(layers);
-    CarGame::globalBestNetwork->SetFitness(0);
+    CarGame::globalBestNetwork->SetFitness(-100000);
 }
 
 void *CarGame::UpdateGlobalNetwork(NeuralNetwork *candidate)

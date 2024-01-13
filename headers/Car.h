@@ -12,7 +12,8 @@ struct InputSpace
     glm::vec2 roadDirection;
     glm::vec2 position;
     glm::vec2 direction;
-    float angleOfNextIntersection;
+    float distanceToNextPoint = 0;
+    float angleOfNextIntersection = 0;
     float speed = 0.0f;
     float distanceFromRoad = 0.0f;
 };

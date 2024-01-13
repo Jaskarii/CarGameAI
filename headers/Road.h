@@ -20,10 +20,10 @@ public:
     static void GenerateRandomPoints();
     void SetNewPath(glm::vec2 pos);
     void Render(glm::mat4 MVP);
-    bool IsOffRoad(Car *car);
+    void UpdateCarStatus(Car *car);
     glm::vec2 *getPositionArray();
     void InitBuffers();
-    void UpdateCarStatus(Car *car, int ctPathIndex);
+    void InitNewPathSegment(Car *car, int ctPathIndex);
     void SetWidth(float givenWidth)
     {
         width = givenWidth;

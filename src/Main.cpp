@@ -37,7 +37,7 @@ bool isOpenGL = false;
 std::vector<CarGame> games;
 std::vector<std::thread> threads;
 std::atomic<bool> stopFlag(false);
-CarGame* mainGame;
+CarGame *mainGame;
 
 void setCameraTo(glm::vec2 position)
 {
@@ -127,11 +127,11 @@ void InitControls()
 {
 	Road::GenerateRandomPoints();
 	renderer = new Renderer();
-	std::vector<int> layers = {5, 10, 10, 10, 2};
+	std::vector<int> layers = {5, 12, 12, 10, 2};
 	CarGame::InitBestNetwork(layers);
-	mainGame = new CarGame(6, false, false);
+	mainGame = new CarGame(9, false, false);
 	mainGame->InitBuffers();
-	setCameraTo(glm::vec2(0,0));
+	setCameraTo(glm::vec2(0, 0));
 }
 
 void ResetControls()
@@ -167,12 +167,12 @@ void OpenGLEnd()
 
 void StartGameThreads()
 {
-	const int numGames = 6;
+	const int numGames = 9;
 
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(350, true, false);
+		games.emplace_back(400, true, false);
 	}
 
 	for (size_t i = 0; i < games.size(); i++)

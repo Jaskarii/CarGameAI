@@ -18,19 +18,31 @@ static float DistanceToLineSegment(glm::vec2 &P, const glm::vec2 &A, const glm::
     // Calculate the dot product and the projection factor
     float projection = glm::dot(AP, AB) / AB_squared;
 
-    // Check if P projects outside the line segment
+    glm::vec2 projectionPoint;
     if (projection < 0.0f)
     {
-        return glm::length(AP); // Distance to A
+        projectionPoint = A; // Closest to A
     }
     else if (projection > 1.0f)
     {
-        return glm::length(P - B); // Distance to B
+        projectionPoint = B; // Closest to B
     }
     else
     {
-        glm::vec2 projectionPoint = A + projection * AB; // Projection point on the line
-        return glm::length(P - projectionPoint);         // Perpendicular distance to the line
+        projectionPoint = A + projection * AB; // Projection point on the line
     }
+
+    float distance = glm::length(P - projectionPoint); // Perpendicular distance to the line
+
+    // Calculate the cross product of AB and AP
+    float crossProduct = AB.x * AP.y - AB.y * AP.x;
+
+    // Determine if the point is to the left or right of the line segment
+    if (crossProduct < 0)
+    {
+        distance = -distance; // Point is to the right, make distance negative
+    }
+
+    return distance;
 }
 #endif

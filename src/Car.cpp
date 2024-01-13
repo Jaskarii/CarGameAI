@@ -33,7 +33,7 @@ void Car::Update()
     {
         speed = 0.0f;
     }
-    
+
     inputs.position += glm::fastNormalize(inputs.direction) * speed;
 }
 
@@ -117,41 +117,41 @@ InputSpace *Car::getInputs()
 
 float fit1Max = 0, fit1Min = 0, fit2Max = 0, fit2Min = 0, fit3Max = 0, fit3Min = 0;
 float maxrelativeAngle, minrelativeAngle, maxDistane, minDistance, MaxnormalizeDistanceFromRoad, MinnormalizeDistanceFromRoad = 0;
+
 void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 {
     std::vector<float> inputVector;
     float relativeAngle = calculateRelativeAngle();
-    float distanceToNext = glm::distance(inputs.nextPoint, inputs.position);
-    float advanced = prevDistance - distanceToNext;
+    float advanced = prevDistance - inputs.distanceToNextPoint;
 
     hasAdvanced > 0.5f;
 
-    prevDistance = distanceToNext;
-    distanceToNext = distanceToNext / 600.0f;
+    prevDistance = inputs.distanceToNextPoint;
+    float distanceToNext = inputs.distanceToNextPoint / 600.0f;
     distanceToNext = std::min(1.0f, distanceToNext);
     float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100.0f;
     inputVector.clear();
-    inputVector.push_back(inputs.angleOfNextIntersection/3);
+    inputVector.push_back(inputs.angleOfNextIntersection / 3);
     inputVector.push_back(relativeAngle / 3);
     inputVector.push_back(distanceToNext);
     inputVector.push_back(normalizeDistanceFromRoad);
     inputVector.push_back(speed / 3.0f);
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
-    Accelerate(outPuts[0]/30);
-    Rotate(outPuts[1]/30);
+    Accelerate(outPuts[0] / 30);
+    Rotate(outPuts[1] / 30);
 
     if (isTraining)
     {
         if (previousPathIndex < CurrentPathIndex)
         {
-            network->AddFitness(50);
+            network->AddFitness(500);
             previousPathIndex = CurrentPathIndex;
         }
-        
+
         float asdddd = std::abs(relativeAngle);
-        //std::cout << fitnessScore << std::endl;
-        network->AddFitness(3*advanced- asdddd - normalizeDistanceFromRoad/5);
+        // std::cout << fitnessScore << std::endl;
+        network->AddFitness(advanced - asdddd - std::abs(normalizeDistanceFromRoad));
     }
     // The higher the better.
 }
