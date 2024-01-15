@@ -27,8 +27,8 @@ void Road::GenerateRandomPoints()
 	roadPoints.push_back(glm::vec2(0.0f, 200.0f));
 	roadPoints.push_back(glm::vec2(100.0f, 300.0f));
 
-	const float min_val = -500.0f;
-	const float max_val = 500.0f;
+	const float min_val = -350.0f;
+	const float max_val = 350.0f;
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 	float yPos = 500.0f;
@@ -39,7 +39,7 @@ void Road::GenerateRandomPoints()
 		float random_float = static_cast<float>(random_int) / RAND_MAX;	 // Between 0 and 1
 		random_float = min_val + random_float * (max_val - min_val);	 // Scale to the desired range
 		float random_floaty = static_cast<float>(random_int) / RAND_MAX; // Between 0 and 1
-		random_floaty = 50.0f + random_floaty * (500.0f - 50.0f);		 // Scale to the desired range
+		random_floaty = 250.0f + random_floaty * (500.0f - 50.0f);		 // Scale to the desired range
 		yPos += random_floaty;
 		roadPoints.push_back(glm::vec2(random_float, yPos));
 	}
@@ -97,10 +97,7 @@ void Road::UpdateCarStatus(Car *car)
 		inputs->distanceFromRoad = distance1;
 	}
 
-	if (std::min(absDistance1, absDistance2) > width)
-	{
-		car->SetCrashed(true);
-	}
+	car->SetCrashed(std::min(absDistance1, absDistance2) > width);
 }
 
 void Road::InitNewPathSegment(Car *car, int ctPathIndex)

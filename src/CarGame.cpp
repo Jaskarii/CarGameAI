@@ -14,7 +14,7 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    std::vector<int> layers = {5, 12, 12, 10, 2};
+    std::vector<int> layers = {5, 15, 15, 15, 2};
     bestNetwork = new NeuralNetwork(layers);
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
@@ -54,7 +54,7 @@ void CarGame::GameLoop()
     if (training)
     {
         frames++;
-        if (EndRun || frames > 2000)
+        if (EndRun || frames > 1500)
         {
             NextGeneration();
             Reset();
@@ -129,7 +129,7 @@ void CarGame::StartGame(std::atomic<bool> &stopFlag)
     while (!stopFlag.load(std::memory_order_acquire))
     {
         GameLoop();
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -190,7 +190,7 @@ void CarGame::NextGeneration()
         UpdateGlobalNetwork(bestNetwork);
     }
 
-    for (size_t i = 0; i < 2; i++)
+    for (size_t i = 28; i < 30; i++)
     {
         UpdateFromGlobalNetwork(&(networks->at(i)));
     }
@@ -204,6 +204,8 @@ void CarGame::NextGeneration()
         }
         int asd = i % 30;
         networks->at(i).CopyWeights(&(networks->at(asd)));
-        networks->at(i).Mutate(i);
+        float MutationRate = i / 700.0f;
+        float MutationScale = i / 400.0f;
+        networks->at(i).Mutate(MutationRate, MutationScale);
     }
 }

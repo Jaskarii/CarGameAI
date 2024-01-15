@@ -31,7 +31,7 @@ void Car::Update()
 {
     if (isCrashed)
     {
-        speed = 0.0f;
+        speed = 0.02f;
     }
 
     inputs.position += glm::fastNormalize(inputs.direction) * speed;
@@ -39,19 +39,10 @@ void Car::Update()
 
 void Car::Rotate(float angle)
 {
-    angle = std::max(angle, -0.05f);
-    angle = std::min(angle, 0.05f);
-    if (std::isnan(inputs.direction.x) || std::isnan(inputs.direction.y))
-    {
-        int a = 0;
-    }
+    angle = std::max(angle, -0.3f);
+    angle = std::min(angle, 0.3f);
 
     rotateVector(inputs.direction, angle);
-
-    if (std::isnan(inputs.direction.x) || std::isnan(inputs.direction.y))
-    {
-        int b = 0;
-    }
 }
 
 void Car::Accelerate(float acc)
@@ -131,27 +122,27 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     distanceToNext = std::min(1.0f, distanceToNext);
     float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100.0f;
     inputVector.clear();
-    inputVector.push_back(inputs.angleOfNextIntersection / 3);
-    inputVector.push_back(relativeAngle / 3);
+    inputVector.push_back(inputs.angleOfNextIntersection / 3.0f);
+    inputVector.push_back(relativeAngle / 3.0f);
     inputVector.push_back(distanceToNext);
     inputVector.push_back(normalizeDistanceFromRoad);
     inputVector.push_back(speed / 3.0f);
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
-    Accelerate(outPuts[0] / 30);
-    Rotate(outPuts[1] / 30);
+    Accelerate(outPuts[0] / 30.0f);
+    Rotate(outPuts[1] / 30.0f);
 
     if (isTraining)
     {
         if (previousPathIndex < CurrentPathIndex)
         {
-            network->AddFitness(500);
+            network->AddFitness(300);
             previousPathIndex = CurrentPathIndex;
         }
 
         float asdddd = std::abs(relativeAngle);
         // std::cout << fitnessScore << std::endl;
-        network->AddFitness(advanced - asdddd - std::abs(normalizeDistanceFromRoad));
+        network->AddFitness(-std::abs(normalizeDistanceFromRoad));
     }
     // The higher the better.
 }

@@ -8,7 +8,6 @@ NeuralNetwork::NeuralNetwork(const std::vector<int> &layers) : layers(layers), f
 {
     InitNeurons();
     InitWeights();
-    Mutate(200);
 }
 
 void NeuralNetwork::CopyWeights(NeuralNetwork *copyFrom)
@@ -92,11 +91,12 @@ std::vector<float> NeuralNetwork::FeedForward(const std::vector<float> &inputs)
     return neurons.back();
 }
 
-void NeuralNetwork::Mutate(int rate)
+void NeuralNetwork::Mutate(float mutationRate, float mutationScale)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dist(0.0f, 100);
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    std::normal_distribution<float> mutationDist(0.0f, mutationScale);
 
     for (auto &layer : weights)
     {
@@ -104,30 +104,9 @@ void NeuralNetwork::Mutate(int rate)
         {
             for (auto &weight : neuron)
             {
-                float randomNumber = dist(gen);
-                if (rate > 120)
+                if (dist(gen) < mutationRate)
                 {
-                    if (randomNumber > 99)
-                    {
-                        weight = RandomWeight();
-                    }
-                    else if (randomNumber > 98)
-                    {
-                        weight = -weight;
-                    }
-                }
-
-                if (randomNumber > 70 && randomNumber < 90)
-                {
-                    weight += 0.1;
-                }
-                else if (randomNumber > 50)
-                {
-                    weight -= 0.1;
-                }
-                else
-                {
-                    continue;
+                    weight += mutationDist(gen);
                 }
             }
         }

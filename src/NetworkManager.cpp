@@ -39,13 +39,15 @@ void NetworkManager::NextGeneration()
     for (size_t i = 0; i < networks->size(); i++)
     {
         networks->at(i).SetFitness(0);
-        if (i < 50)
+        if (i < 20)
         {
             continue;
         }
-        int asd = i % 50;
+        int asd = i % 20;
         networks->at(i).CopyWeights(&(networks->at(asd)));
-        networks->at(i).Mutate(i);
+        float MutationRate = i / 1000;
+        float MutationScale = i / 500;
+        networks->at(i).Mutate(i, MutationScale);
     }
 }
 

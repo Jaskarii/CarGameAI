@@ -10,7 +10,7 @@ public:
     NeuralNetwork(const std::vector<int> &layers);
     void CopyWeights(NeuralNetwork *copyFrom);
     std::vector<float> FeedForward(const std::vector<float> &inputs);
-    void Mutate(int rate);
+    void Mutate(float mutationRate, float mutationScale);
     void AddFitness(float fit);
     void SetFitness(float fit);
     std::vector<std::vector<std::vector<float>>> *GetWeights();
