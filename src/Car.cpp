@@ -113,36 +113,68 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 {
     std::vector<float> inputVector;
     float relativeAngle = calculateRelativeAngle();
+    relativeAngle = relativeAngle / 3.0f;
+    relativeAngle = std::max(relativeAngle, -1.0f);
+    relativeAngle = std::min(relativeAngle, 1.0f);
     float advanced = prevDistance - inputs.distanceToNextPoint;
 
-    hasAdvanced > 0.5f;
-
+    //hasAdvanced > 0.5f;
     prevDistance = inputs.distanceToNextPoint;
     float distanceToNext = inputs.distanceToNextPoint / 600.0f;
     distanceToNext = std::min(1.0f, distanceToNext);
     float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100.0f;
+
+    normalizeDistanceFromRoad = std::max(normalizeDistanceFromRoad, -1.0f);
+    normalizeDistanceFromRoad = std::min(normalizeDistanceFromRoad, 1.0f);
     inputVector.clear();
-    inputVector.push_back(inputs.angleOfNextIntersection / 3.0f);
-    inputVector.push_back(relativeAngle / 3.0f);
+    inputVector.push_back(inputs.angleOfNextIntersection);
+    inputVector.push_back(relativeAngle);
     inputVector.push_back(distanceToNext);
     inputVector.push_back(normalizeDistanceFromRoad);
     inputVector.push_back(speed / 3.0f);
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
-    Accelerate(outPuts[0] / 30.0f);
-    Rotate(outPuts[1] / 30.0f);
+
+    // if(outPuts[0] > 0.5f)
+    // {
+    //     Accelerate(0.03f);
+    // }
+
+    // if (outPuts[1] > 0.5f)
+    // {
+    //     Accelerate(-0.03f);
+    // }
+
+    // if(outPuts[2] > 0.5f)
+    // {
+    //     Rotate(0.03f);
+    // }
+
+    // if (outPuts[3] > 0.5f)
+    // {
+    //     Rotate(-0.03f);
+    // }
+
+    Accelerate(outPuts[0]/30.0f);
+    Rotate(outPuts[1]/30.0f);
+
 
     if (isTraining)
     {
         if (previousPathIndex < CurrentPathIndex)
         {
-            network->AddFitness(300);
+            //network->AddFitness(300);
             previousPathIndex = CurrentPathIndex;
         }
 
-        float asdddd = std::abs(relativeAngle);
+        float fitnessScore = 0.0f;
+        if (!isCrashed)
+        {
+            float fitnessScore = std::abs(inputs.position.y)/1000.0f;
+        }
+        
         // std::cout << fitnessScore << std::endl;
-        network->AddFitness(-std::abs(normalizeDistanceFromRoad));
+        network->AddFitness(std::abs(inputs.position.y)/1000.0f);
     }
     // The higher the better.
 }

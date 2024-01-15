@@ -48,9 +48,9 @@ void main()
     vec2 dir=normalize(direction[0]);
     vec2 dirNormal=vec2(dir.y,-dir.x);
     
-    emitVertex(gl_in[0].gl_Position.xy+5*(-dir+dirNormal));
-    emitVertex(gl_in[0].gl_Position.xy+5*(-dir-dirNormal));
-    emitVertex(gl_in[0].gl_Position.xy+10*(dir));
+    emitVertex(gl_in[0].gl_Position.xy+10*(-dir+dirNormal));
+    emitVertex(gl_in[0].gl_Position.xy+10*(-dir-dirNormal));
+    emitVertex(gl_in[0].gl_Position.xy+20*(dir));
 }
 
 #shader fragment

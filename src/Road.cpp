@@ -24,8 +24,7 @@ float calculateRelativeAngle(glm::vec2 v1, glm::vec2 v2)
 void Road::GenerateRandomPoints()
 {
 	roadPoints.push_back(glm::vec2(0.0f, -100.0f));
-	roadPoints.push_back(glm::vec2(0.0f, 200.0f));
-	roadPoints.push_back(glm::vec2(100.0f, 300.0f));
+	roadPoints.push_back(glm::vec2(0.0f, 300.0f));
 
 	const float min_val = -350.0f;
 	const float max_val = 350.0f;
@@ -116,6 +115,9 @@ void Road::InitNewPathSegment(Car *car, int ctPathIndex)
 	nextRoadDir.y = positions[ctPathIndex + 1].y - positions[ctPathIndex].y;
 	inputs->distanceToNextPoint = glm::distance(inputs->position, positions[ctPathIndex]);
 	float relativeCornerAngle = calculateRelativeAngle(glm::normalize(roadDir), glm::normalize(nextRoadDir));
+	relativeCornerAngle = relativeCornerAngle/3.0f;
+	relativeCornerAngle = std::max(relativeCornerAngle, -1.0f);
+    relativeCornerAngle = std::min(relativeCornerAngle, 1.0f);
 	inputs->angleOfNextIntersection = relativeCornerAngle;
 }
 

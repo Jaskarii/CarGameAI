@@ -14,7 +14,8 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    std::vector<int> layers = {5, 15, 15, 15, 2};
+    //std::vector<int> layers = {5, 20, 20, 20, 4};
+    std::vector<int> layers = {5, 20, 20, 20, 2};
     bestNetwork = new NeuralNetwork(layers);
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
