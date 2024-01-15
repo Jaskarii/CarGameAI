@@ -33,7 +33,7 @@ void Road::GenerateRandomPoints()
 	const float max_val = 600.0f;
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-	float yPos = 1000.0f;
+	float yPos = 1800.0f;
 	for (size_t i = 0; i < 1000; i++)
 	{
 		int random_int = std::rand();
