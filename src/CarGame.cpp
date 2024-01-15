@@ -14,7 +14,7 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    //std::vector<int> layers = 20, 4};
+    // std::vector<int> layers = 20, 4};
     std::vector<int> layers = {5, 20, 20, 20, 2};
     bestNetwork = new NeuralNetwork(layers);
     bestNetwork->SetFitness(-1000000);
@@ -146,6 +146,7 @@ void CarGame::InitBuffers()
     layout.PushFloat(2);
     layout.PushFloat(2);
     layout.PushUInt(1);
+    layout.PushFloat(1);
     va->AddBuffer(*vbo, layout);
     road->InitBuffers();
 }

@@ -33,6 +33,7 @@ struct CarVertex
     float dirX = 0.0f;
     float dirY = 1.0f;
     unsigned int isCamera = 0;
+    float speed;
 };
 
 class Car
@@ -55,6 +56,7 @@ public:
     bool hasAdvanced = true;
 
 private:
+    void PreRender();
     float calculateRelativeAngle();
     CarVertex carStatus;
     float speed = 0;

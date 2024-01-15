@@ -93,6 +93,7 @@ CarVertex Car::GetStatus()
     carStatus.dirY = inputs.direction.y;
     carStatus.posX = inputs.position.x;
     carStatus.posY = inputs.position.y;
+    carStatus.speed = speed;
     return carStatus;
 }
 
@@ -118,7 +119,7 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     relativeAngle = std::min(relativeAngle, 1.0f);
     float advanced = prevDistance - inputs.distanceToNextPoint;
 
-    //hasAdvanced > 0.5f;
+    // hasAdvanced > 0.5f;
     prevDistance = inputs.distanceToNextPoint;
     float distanceToNext = inputs.distanceToNextPoint / 600.0f;
     distanceToNext = std::min(1.0f, distanceToNext);
@@ -155,25 +156,23 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     //     Rotate(-0.03f);
     // }
 
-
-    Accelerate(outPuts[0]/30.0f);
-    Rotate(outPuts[1]/30.0f);
-
+    Accelerate(outPuts[0] / 30.0f);
+    Rotate(outPuts[1] / 30.0f);
 
     if (isTraining)
     {
         if (previousPathIndex < CurrentPathIndex)
         {
-            //network->AddFitness(300);
+            // network->AddFitness(300);
             previousPathIndex = CurrentPathIndex;
         }
 
         float fitnessScore = 0.0f;
         if (!isCrashed)
         {
-            fitnessScore = std::abs(inputs.position.y)/1000.0f;
+            fitnessScore = std::abs(inputs.position.y) / 1000.0f;
         }
-        
+
         // std::cout << fitnessScore << std::endl;
         network->AddFitness(fitnessScore);
     }
@@ -195,4 +194,8 @@ float Car::calculateRelativeAngle()
     }
 
     return angle;
+}
+
+void Car::PreRender()
+{
 }
