@@ -14,7 +14,7 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     networks = new std::vector<NeuralNetwork>();
     road = new Road();
 
-    //std::vector<int> layers = {5, 20, 20, 20, 4};
+    //std::vector<int> layers = 20, 4};
     std::vector<int> layers = {5, 20, 20, 20, 2};
     bestNetwork = new NeuralNetwork(layers);
     bestNetwork->SetFitness(-1000000);
@@ -55,7 +55,7 @@ void CarGame::GameLoop()
     if (training)
     {
         frames++;
-        if (EndRun || frames > 1500)
+        if (EndRun || frames > 2000)
         {
             NextGeneration();
             Reset();

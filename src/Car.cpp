@@ -155,6 +155,7 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     //     Rotate(-0.03f);
     // }
 
+
     Accelerate(outPuts[0]/30.0f);
     Rotate(outPuts[1]/30.0f);
 
@@ -170,11 +171,11 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
         float fitnessScore = 0.0f;
         if (!isCrashed)
         {
-            float fitnessScore = std::abs(inputs.position.y)/1000.0f;
+            fitnessScore = std::abs(inputs.position.y)/1000.0f;
         }
         
         // std::cout << fitnessScore << std::endl;
-        network->AddFitness(std::abs(inputs.position.y)/1000.0f);
+        network->AddFitness(fitnessScore);
     }
     // The higher the better.
 }

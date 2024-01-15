@@ -26,8 +26,8 @@ void Road::GenerateRandomPoints()
 	roadPoints.push_back(glm::vec2(0.0f, -100.0f));
 	roadPoints.push_back(glm::vec2(0.0f, 300.0f));
 
-	const float min_val = -350.0f;
-	const float max_val = 350.0f;
+	const float min_val = -600.0f;
+	const float max_val = 600.0f;
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 	float yPos = 500.0f;
