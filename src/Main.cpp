@@ -127,10 +127,10 @@ void InitControls()
 {
 	Road::GenerateRandomPoints();
 	renderer = new Renderer();
-	// std::vector<int> layers = {5, 20, 20, 20, 4};
-	std::vector<int> layers = {5, 20, 20, 20, 2};
+    //std::vector<int> layers = {5, 20, 20, 20, 4};
+    std::vector<int> layers = {5, 20, 20, 20, 2};
 	CarGame::InitBestNetwork(layers);
-	mainGame = new CarGame(7, false, false);
+	mainGame = new CarGame(200, true, false);
 	mainGame->InitBuffers();
 	setCameraTo(glm::vec2(0, 0));
 }
@@ -153,8 +153,7 @@ bool OpenGLRender()
 	checkGLError();
 	renderer->Clear();
 	setCameraTo(mainGame->GetCameraPosition());
-
-		mainGame->Render(proj, MVP);
+	mainGame->Render(proj, MVP);
 
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -169,12 +168,12 @@ void OpenGLEnd()
 
 void StartGameThreads()
 {
-	const int numGames = 7;
+	const int numGames = 4;
 
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(400, true, false);
+		games.emplace_back(300, true, false);
 	}
 
 	for (size_t i = 0; i < games.size(); i++)
@@ -186,8 +185,8 @@ void StartGameThreads()
 			{
 				// Handle the updated network in the first handler
 
-				mainGame->GetNetworks()->at(updatedNetwork->index).CopyWeights(updatedNetwork);
-				mainGame->GetNetworks()->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
+				// mainGame->GetNetworks()->at(updatedNetwork->index).CopyWeights(updatedNetwork);
+				// mainGame->GetNetworks()->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
 				std::cout << updatedNetwork->GetFitness() << " " << updatedNetwork->index << std::endl;
 				updatedNetwork->printWeights();
 			});

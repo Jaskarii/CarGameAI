@@ -28,7 +28,8 @@ in vec2[]direction;
 in uint[]isCameraFollowing;
 in float[]speed;
 out float fSpeed;
-out vec2 triangleBottom;
+out vec2 triangleBottomLeft;
+out vec2 triangleBottomRight;
 out vec2 triangleTop;
 uniform mat4 proj;
 uniform mat4 mvp;
@@ -56,11 +57,13 @@ void main()
     vec2 dir=normalize(direction[0]);
     vec2 dirNormal=vec2(dir.y,-dir.x);
     
-    triangleBottom=gl_in[0].gl_Position.xy-10*dir;
+    vec2 triangleBottom=gl_in[0].gl_Position.xy-10*dir;
+    triangleBottomLeft = triangleBottom-10*(dirNormal);
+    triangleBottomRight = triangleBottom+10*(dirNormal);
     triangleTop=triangleBottom+40*(dir);
     
-    emitVertex(triangleBottom+10*(dirNormal));
-    emitVertex(triangleBottom-10*(dirNormal));
+    emitVertex(triangleBottomRight);
+    emitVertex(triangleBottomLeft);
     emitVertex(triangleTop);
 }
 
@@ -69,29 +72,58 @@ void main()
 
 in float fSpeed;
 in vec2 fVertexPos;
-in vec2 triangleBottom;
+in vec2 triangleBottomLeft;
+in vec2 triangleBottomRight;
 in vec2 triangleTop;
-layout(location=0)out vec4 FragColor;
+layout(location=0) out vec4 FragColor;
 
-void main()
-{
-    float fillFactor=fSpeed/3.;
+// Function to calculate the distance from a point to a line segment
+float edgeDistance(vec2 point, vec2 lineStart, vec2 lineEnd) {
+    vec2 line = lineEnd - lineStart;
+    vec2 toPoint = point - lineStart;
+    float t = max(0, min(1, dot(toPoint, line) / dot(line, line)));
+    vec2 projection = lineStart + t * line;
+    return distance(point, projection);
+}
+
+void main() {
+    vec4 borderColor = vec4(0.0, 0.0, 1.0, 1.0); // Blue for border
+    vec4 triangleColor = vec4(0.0, 1.0, 0.0, 1.0); // Green for triangle
+    vec4 fillColor = vec4(1.0, 0.0, 0.0, 1.0); // Red for fill
+
+    float fillFactor = fSpeed / 2.0; // Assuming max speed is 3.0
+    float edgeSoftness = 2; // Adjust for softer/harder edges
+
+    // Calculate distances to each edge
+    float d1 = edgeDistance(fVertexPos, triangleBottomLeft, triangleBottomRight);
+    float d2 = edgeDistance(fVertexPos, triangleBottomRight, triangleTop);
+    float d3 = edgeDistance(fVertexPos, triangleTop, triangleBottomLeft);
     
+    // Find the minimum distance to an edge
+    float minDistance = min(min(d1, d2), d3);
+
+    // Calculate alpha based on edge distance
+    float alpha = min(minDistance / edgeSoftness, 1.0);
+
     // Calculate the direction from the bottom to the top of the triangle
-    vec2 bottomToTop=triangleTop-triangleBottom;
-    
+    vec2 bottomToTop = triangleTop - triangleBottomLeft;
+
     // Calculate the vector from the bottom of the triangle to the current fragment
-    vec2 bottomToFrag=fVertexPos-triangleBottom;
-    
+    vec2 bottomToFrag = fVertexPos - triangleBottomLeft;
+
     // Project this vector onto the bottom-to-top vector
-    float projection=dot(bottomToFrag,bottomToTop)/dot(bottomToTop,bottomToTop);
-    
-    // Check if the projection is within the fill level
-    if(projection<=fillFactor){
+    float projection = dot(bottomToFrag, bottomToTop) / dot(bottomToTop, bottomToTop);
+
+    if (projection <= fillFactor) {
         // Fill color
-        FragColor=vec4(1.,.6,0.,1.);// Color representing speed
-    }else{
-        // Regular triangle color
-        FragColor=vec4(.1608,.8667,.0667,1.);// Some color
+        FragColor = vec4(fillColor.rgb, alpha); // Use fill color with calculated alpha
+    } else {
+        // Triangle color
+        FragColor = vec4(triangleColor.rgb, alpha); // Use triangle color with calculated alpha
     }
-};
+
+    // Apply border color with alpha for edge softness
+    if (minDistance < edgeSoftness) {
+        FragColor = mix(borderColor, FragColor, minDistance / edgeSoftness);
+    }
+}

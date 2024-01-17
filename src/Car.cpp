@@ -48,7 +48,7 @@ void Car::Rotate(float angle)
 void Car::Accelerate(float acc)
 {
     speed += acc;
-    speed = std::min(speed, 3.0f);
+    speed = std::min(speed, 2.0f);
     speed = std::max(speed, 0.0f);
 }
 
@@ -132,7 +132,7 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     inputVector.push_back(relativeAngle);
     inputVector.push_back(distanceToNext);
     inputVector.push_back(normalizeDistanceFromRoad);
-    inputVector.push_back(speed / 3.0f);
+    inputVector.push_back(speed /2.0f);
 
     std::vector<float> outPuts = network->FeedForward(inputVector);
 
