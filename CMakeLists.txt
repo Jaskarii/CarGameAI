@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.8)
 
 project(MyOpenGL)
+
+enable_language(CUDA)
+find_package(CUDA REQUIRED)
+
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -34,6 +38,11 @@ add_library(imgui ${IMGUI_SOURCES})
 
 # Source files
 file(GLOB SOURCES "src/*.cpp")
+
+if(CUDA_FOUND)
+    file(GLOB_RECURSE CUDA_SOURCES "src/*.cu")
+    list(APPEND SOURCES ${CUDA_SOURCES})
+endif()
 
 set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 

@@ -14,13 +14,9 @@
 #include "Texture.h"
 #include "Road.h"
 #include "Car.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_glfw.h"
-#include "ImGui/imgui_impl_opengl3.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Main.h"
-#include "NetworkManager.h"
 #include "CarGame.h"
 #include <thread>
 #include <atomic>
@@ -32,7 +28,6 @@ glm::mat4 view = glm::mat4(1.0f);
 glm::mat4 MVP;
 int frames = 0;
 int carWithMaxY = 0;
-std::vector<NeuralNetwork> *networks;
 bool isOpenGL = false;
 std::vector<CarGame> games;
 std::vector<std::thread> threads;
@@ -65,8 +60,8 @@ void checkGLError()
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
 	glfwGetFramebufferSize(window, &width, &height);
-	float fWidth = width / 2;
-	float fHeight = height / 2;
+	float fWidth = width / 2.0f;
+	float fHeight = height / 2.0f;
 	proj = glm::ortho(-fWidth, fWidth, -fHeight, fHeight, -1.0f, 1.0f);
 	glViewport(0, 0, width, height);
 }
@@ -79,8 +74,8 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 		glfwGetCursorPos(window, &xpos, &ypos);
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		float fwidth = width;
-		float fheight = height;
+		float fwidth = (float)width;
+		float fheight = (float)height;
 		ypos = height - ypos;
 		// Convert cursor position to OpenGL normalized coordinates
 		// road->SetNewPath(Vector2(xpos, ypos));
@@ -97,8 +92,8 @@ bool InitOpenGL()
 	window = glfwCreateWindow(800, 800, "MyOpenGL", NULL, NULL);
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
-	float fWidth = width / 2;
-	float fHeight = height / 2;
+	float fWidth = width / 2.0f;
+	float fHeight = height / 2.0f;
 	proj = glm::ortho(-fWidth, fWidth, -fHeight, fHeight, -1.0f, 1.0f);
 
 	if (!window)
@@ -127,8 +122,8 @@ void InitControls()
 {
 	Road::GenerateRandomPoints();
 	renderer = new Renderer();
-    //std::vector<int> layers = {5, 20, 20, 20, 4};
-    std::vector<int> layers = {5, 20, 20, 20, 2};
+	// std::vector<int> layers = {5, 20, 20, 20, 4};
+	std::vector<int> layers = {5, 20, 20, 20, 2};
 	CarGame::InitBestNetwork(layers);
 	mainGame = new CarGame(200, true, false);
 	mainGame->InitBuffers();
@@ -168,7 +163,7 @@ void OpenGLEnd()
 
 void StartGameThreads()
 {
-	const int numGames = 4;
+	const int numGames = 6;
 
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
@@ -176,20 +171,10 @@ void StartGameThreads()
 		games.emplace_back(300, true, false);
 	}
 
-	for (size_t i = 0; i < games.size(); i++)
+	for (int i = 0; i < games.size(); i++)
 	{
 		games[i].index = i;
 		// Subscribe to the network update event with the first handler
-		games[i].networkUpdateEvent.Subscribe(
-			[](NeuralNetwork *updatedNetwork)
-			{
-				// Handle the updated network in the first handler
-
-				// mainGame->GetNetworks()->at(updatedNetwork->index).CopyWeights(updatedNetwork);
-				// mainGame->GetNetworks()->at(updatedNetwork->index).SetFitness(updatedNetwork->GetFitness());
-				std::cout << updatedNetwork->GetFitness() << " " << updatedNetwork->index << std::endl;
-				updatedNetwork->printWeights();
-			});
 	}
 
 	// Create and start game threads
@@ -249,12 +234,12 @@ bool CheckKeyPress(GLFWwindow *window)
 	}
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
-		scale += 0.05;
+		scale += 0.05f;
 		scale = std::min(scale, 1.0f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 	{
-		scale -= 0.05;
+		scale -= 0.05f;
 		scale = std::max(scale, 0.1f);
 	}
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

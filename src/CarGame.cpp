@@ -5,25 +5,25 @@
 #include <thread>
 #include <chrono>
 
-NeuralNetwork *CarGame::globalBestNetwork = nullptr;
+NeuralNetworkEigen *CarGame::globalBestNetwork = nullptr;
 std::mutex lock;
 
 CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(isTraining), control(isControl)
 {
     cars = new std::vector<Car>();
-    networks = new std::vector<NeuralNetwork>();
+    networks = new std::vector<NeuralNetworkEigen>();
     road = new Road();
 
     // std::vector<int> layers = 20, 4};
     std::vector<int> layers = {5, 20, 20, 20, 2};
-    bestNetwork = new NeuralNetwork(layers);
+    bestNetwork = new NeuralNetworkEigen(layers);
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
     {
-        Car car(0, i * 100); // Create a Car object and initialize it
+        Car car(0, i * 100.0f); // Create a Car object and initialize it
         car.isTraining = training;
         cars->push_back(car);
-        NeuralNetwork network(layers);
+        NeuralNetworkEigen network(layers);
         networks->push_back(network);
     }
     Reset();
@@ -35,7 +35,7 @@ void CarGame::GameLoop()
     bool EndRun = true;
     // Iterate through the vector to find the Car with the highest A value.
     float maxY = 0;
-    for (size_t i = 0; i < cars->size(); i++)
+    for (int i = 0; i < cars->size(); i++)
     {
         Car &car = cars->at(i);
         car.Update();
@@ -66,19 +66,19 @@ void CarGame::GameLoop()
 void CarGame::Reset()
 {
     frames = 0;
-    for (size_t i = 0; i < cars->size(); i++)
+    for (int i = 0; i < cars->size(); i++)
     {
         cars->at(i).Reset();
         road->InitNewPathSegment(&(cars->at(i)), 1);
     }
 }
 
-NeuralNetwork *CarGame::GetBestNetwork()
+NeuralNetworkEigen *CarGame::GetBestNetwork()
 {
     return bestNetwork;
 }
 
-std::vector<NeuralNetwork> *CarGame::GetNetworks()
+std::vector<NeuralNetworkEigen> *CarGame::GetNetworks()
 {
     return networks;
 }
@@ -93,18 +93,18 @@ glm::vec2 CarGame::GetCameraPosition()
     return glm::vec2(cars->at(maxYIndex).getInputs()->position);
 }
 
-void CarGame::CopyWeightsFromBest(NeuralNetwork *toNetwork)
+void CarGame::CopyWeightsFromBest(NeuralNetworkEigen *toNetwork)
 {
     toNetwork->CopyWeights(bestNetwork);
 }
 
 void CarGame::InitBestNetwork(std::vector<int> layers)
 {
-    CarGame::globalBestNetwork = new NeuralNetwork(layers);
+    CarGame::globalBestNetwork = new NeuralNetworkEigen(layers);
     CarGame::globalBestNetwork->SetFitness(-100000);
 }
 
-void *CarGame::UpdateGlobalNetwork(NeuralNetwork *candidate)
+void *CarGame::UpdateGlobalNetwork(NeuralNetworkEigen *candidate)
 {
     lock.lock();
     if (candidate->GetFitness() > CarGame::globalBestNetwork->GetFitness())
@@ -117,7 +117,7 @@ void *CarGame::UpdateGlobalNetwork(NeuralNetwork *candidate)
     return nullptr;
 }
 
-void *CarGame::UpdateFromGlobalNetwork(NeuralNetwork *candidate)
+void *CarGame::UpdateFromGlobalNetwork(NeuralNetworkEigen *candidate)
 {
     lock.lock();
     candidate->CopyWeights(globalBestNetwork);
@@ -130,7 +130,6 @@ void CarGame::StartGame(std::atomic<bool> &stopFlag)
     while (!stopFlag.load(std::memory_order_acquire))
     {
         GameLoop();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -155,7 +154,7 @@ void CarGame::Render(glm::mat4 proj, glm::mat4 mvp)
 {
     road->Render(mvp);
 
-    for (size_t i = 0; i < cars->size(); i++)
+    for (int i = 0; i < cars->size(); i++)
     {
         cars->at(i).Update();
         carVertices[i] = cars->at(i).GetStatus();
@@ -176,7 +175,7 @@ void CarGame::NextGeneration()
 {
     generation++;
     // Sort networks based on fitness.
-    std::sort(networks->begin(), networks->end(), [](const NeuralNetwork &a, const NeuralNetwork &b)
+    std::sort(networks->begin(), networks->end(), [](const NeuralNetworkEigen &a, const NeuralNetworkEigen &b)
               {
                   return a.CompareTo(b) > 0; // Use CompareTo for comparison
               });
@@ -187,17 +186,15 @@ void CarGame::NextGeneration()
     {
         bestNetwork->CopyWeights(&(networks->at(0)));
         bestNetwork->SetFitness(fitnn);
-        bestNetwork->index = index;
-        networkUpdateEvent.UpdateBestNetwork(bestNetwork);
         UpdateGlobalNetwork(bestNetwork);
     }
 
-    for (size_t i = 28; i < 30; i++)
+    for (int i = 28; i < 30; i++)
     {
         UpdateFromGlobalNetwork(&(networks->at(i)));
     }
 
-    for (size_t i = 0; i < networks->size(); i++)
+    for (int i = 0; i < networks->size(); i++)
     {
         networks->at(i).SetFitness(0);
         if (i < 30)

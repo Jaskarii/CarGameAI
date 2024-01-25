@@ -48,7 +48,7 @@ void Car::Rotate(float angle)
 void Car::Accelerate(float acc)
 {
     speed += acc;
-    speed = std::min(speed, 2.0f);
+    speed = std::min(speed, 4.0f);
     speed = std::max(speed, 0.0f);
 }
 
@@ -110,9 +110,8 @@ InputSpace *Car::getInputs()
 float fit1Max = 0, fit1Min = 0, fit2Max = 0, fit2Min = 0, fit3Max = 0, fit3Min = 0;
 float maxrelativeAngle, minrelativeAngle, maxDistane, minDistance, MaxnormalizeDistanceFromRoad, MinnormalizeDistanceFromRoad = 0;
 
-void Car::GetAndHandleOutPuts(NeuralNetwork *network)
+void Car::GetAndHandleOutPuts(NeuralNetworkEigen *network)
 {
-    std::vector<float> inputVector;
     float relativeAngle = calculateRelativeAngle();
     relativeAngle = relativeAngle / 3.0f;
     relativeAngle = std::max(relativeAngle, -1.0f);
@@ -127,14 +126,14 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
 
     normalizeDistanceFromRoad = std::max(normalizeDistanceFromRoad, -1.0f);
     normalizeDistanceFromRoad = std::min(normalizeDistanceFromRoad, 1.0f);
-    inputVector.clear();
-    inputVector.push_back(inputs.angleOfNextIntersection);
-    inputVector.push_back(relativeAngle);
-    inputVector.push_back(distanceToNext);
-    inputVector.push_back(normalizeDistanceFromRoad);
-    inputVector.push_back(speed /2.0f);
+    Eigen::VectorXf inputVector(5);
+    inputVector << inputs.angleOfNextIntersection,
+        relativeAngle,
+        distanceToNext,
+        normalizeDistanceFromRoad,
+        speed / 4.0f;
 
-    std::vector<float> outPuts = network->FeedForward(inputVector);
+    Eigen::VectorXf outPuts = network->FeedForward(inputVector);
 
     // if(outPuts[0] > 0.5f)
     // {
@@ -156,7 +155,7 @@ void Car::GetAndHandleOutPuts(NeuralNetwork *network)
     //     Rotate(-0.03f);
     // }
 
-    Accelerate(outPuts[0] / 30.0f);
+    Accelerate(outPuts[0] / 40.0f);
     Rotate(outPuts[1] / 30.0f);
 
     if (isTraining)

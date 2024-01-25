@@ -91,6 +91,11 @@
     "typeindex": "cpp",
     "valarray": "cpp",
     "variant": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "queue": "cpp",
+    "ranges": "cpp",
+    "span": "cpp",
+    "xtree": "cpp",
+    "core": "cpp"
   }
 }

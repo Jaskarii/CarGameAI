@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include <string>
 #include "Vector2.h"
-#include "NeuralNetwork.h"
+#include "NeuralNetworkEigen.h"
 
 struct InputSpace
 {
@@ -50,7 +50,7 @@ public:
     CarVertex GetStatus();
     void SetCamera(bool isCam);
     InputSpace *getInputs();
-    void GetAndHandleOutPuts(NeuralNetwork *network);
+    void GetAndHandleOutPuts(NeuralNetworkEigen *network);
     int CurrentPathIndex = 1;
     bool isTraining = true;
     bool hasAdvanced = true;
