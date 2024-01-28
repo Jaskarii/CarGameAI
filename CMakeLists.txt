@@ -2,8 +2,15 @@ cmake_minimum_required(VERSION 3.8)
 
 project(MyOpenGL)
 
-enable_language(CUDA)
-find_package(CUDA REQUIRED)
+option(USE_CUDA "Enable CUDA support" ON)
+
+if(USE_CUDA)
+    add_definitions(-DUSE_CUDA)
+    enable_language(CUDA)
+    find_package(CUDA REQUIRED)
+endif()
+
+
 
 
 # Set C++ standard
@@ -39,7 +46,7 @@ add_library(imgui ${IMGUI_SOURCES})
 # Source files
 file(GLOB SOURCES "src/*.cpp")
 
-if(CUDA_FOUND)
+if(USE_CUDA)
     file(GLOB_RECURSE CUDA_SOURCES "src/*.cu")
     list(APPEND SOURCES ${CUDA_SOURCES})
 endif()

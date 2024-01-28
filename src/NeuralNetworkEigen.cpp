@@ -62,7 +62,6 @@ void NeuralNetworkEigen::InitWeights()
 Eigen::VectorXf NeuralNetworkEigen::FeedForward(const Eigen::VectorXf &inputs)
 {
     neurons[0] = inputs;
-
     for (size_t i = 1; i < layers.size(); ++i)
     {
         // Perform the matrix-vector multiplication

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <mutex>
 #include <thread>
-#include <chrono>
 
 NeuralNetworkEigen *CarGame::globalBestNetwork = nullptr;
 std::mutex lock;
@@ -16,41 +15,104 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
 
     // std::vector<int> layers = 20, 4};
     std::vector<int> layers = {5, 20, 20, 20, 2};
+#ifdef USE_CUDA
+    cudaNN = new NeuralCuda(layers, amountOfCars);
+#endif
     bestNetwork = new NeuralNetworkEigen(layers);
     bestNetwork->SetFitness(-1000000);
     for (int i = 0; i < amountOfCars; ++i)
     {
         Car car(0, i * 100.0f); // Create a Car object and initialize it
+        car.carIndex = i;
         car.isTraining = training;
         cars->push_back(car);
         NeuralNetworkEigen network(layers);
         networks->push_back(network);
     }
+    allInputs = new std::vector<float>();
+    allOutputs = new std::vector<float>();
+    allInputs->resize(amountOfCars * layers.front());
+    allOutputs->resize(amountOfCars * layers.back());
     Reset();
 }
+
+#ifdef USE_CUDA
+void CarGame::InitializeCudaNetwork()
+{
+    std::vector<float> combinedWeights;
+
+    for (const auto &network : *networks)
+    {
+        const auto &networkWeights = network.GetWeights(); // Get weights as std::vector<Eigen::MatrixXf>
+
+        for (const auto &weightMatrix : networkWeights)
+        {
+            Eigen::Map<const Eigen::VectorXf> flat(weightMatrix.data(), weightMatrix.size());
+            combinedWeights.insert(combinedWeights.end(), flat.data(), flat.data() + flat.size());
+        }
+    }
+
+    // Now combinedWeights contains all weights flattened
+    // Set these weights in your NeuralCuda instance
+    cudaNN->SetWeights(combinedWeights);
+}
+#endif
 
 void CarGame::GameLoop()
 {
     // Initialize variables to track the maximum A value and the corresponding Car.
-    bool EndRun = true;
+    bool EndRun = false;
     // Iterate through the vector to find the Car with the highest A value.
     float maxY = 0;
+    // auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < cars->size(); i++)
     {
         Car &car = cars->at(i);
         car.Update();
         road->UpdateCarStatus(&car);
-        if (!control)
-        {
-            car.GetAndHandleOutPuts(&(networks->at(i)));
-        }
-        EndRun = !car.hasAdvanced;
+
         if (maxY < car.getInputs()->position.y)
         {
             maxY = car.getInputs()->position.y;
             maxYIndex = i;
         }
     }
+    // auto end = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double, std::milli> add_vectors_duration = end - start;
+
+    // std::cout << "Update : " << add_vectors_duration.count() << " ms  ";
+
+    // start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < cars->size(); i++)
+    {
+        Car &car = cars->at(i);
+        if (!control)
+        {
+            car.GetAndHandleOutPuts(&(networks->at(i)), allInputs);
+        }
+    }
+
+#ifdef USE_CUDA
+    cudaNN->SetInputs(*allInputs);
+    cudaNN->FeedForward(*allOutputs);
+    size_t outputIndex = 0;
+    for (int i = 0; i < cars->size(); i++)
+    {
+        Car &car = cars->at(i);
+        size_t outputIndex = i * 2; // Assuming 2 outputs per car
+        // Read the outputs directly from allOutputs
+        float outPut1 = allOutputs->at(outputIndex);
+        float outPut2 = allOutputs->at(outputIndex + 1);
+        // Use these outputs to control the car
+        car.Accelerate(outPut1 / 40);
+        car.Rotate(outPut2 / 30);
+    }
+#endif
+
+    // end = std::chrono::high_resolution_clock::now();
+    // add_vectors_duration = end - start;
+    // std::cout << "Network : " << add_vectors_duration.count() << " ms  \n";
 
     if (training)
     {
@@ -65,7 +127,13 @@ void CarGame::GameLoop()
 
 void CarGame::Reset()
 {
+    std::chrono::duration<double, std::milli> add_vectors_duration = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "generation finished:: " << add_vectors_duration.count() << " ms" << std::endl;
+    start = std::chrono::high_resolution_clock::now();
     frames = 0;
+#ifdef USE_CUDA
+    InitializeCudaNetwork();
+#endif
     for (int i = 0; i < cars->size(); i++)
     {
         cars->at(i).Reset();
@@ -111,7 +179,7 @@ void *CarGame::UpdateGlobalNetwork(NeuralNetworkEigen *candidate)
     {
         CarGame::globalBestNetwork->CopyWeights(candidate);
         CarGame::globalBestNetwork->SetFitness(candidate->GetFitness());
-        std::cout << "global updated" << globalBestNetwork->GetFitness() << std::endl;
+        std::cout << "global updated " << globalBestNetwork->GetFitness() << "    ";
     }
     lock.unlock();
     return nullptr;
@@ -181,7 +249,6 @@ void CarGame::NextGeneration()
               });
 
     float fitnn = networks->at(0).GetFitness();
-    std::cout << fitnn << " " << index << std::endl;
     if (fitnn > bestNetwork->GetFitness())
     {
         bestNetwork->CopyWeights(&(networks->at(0)));

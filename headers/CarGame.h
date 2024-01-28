@@ -2,10 +2,13 @@
 #define CARGAME_H
 
 #include "Road.h"
+#include <chrono>
 #include "vector"
 #include "atomic"
-#include "NeuralNetworkEigen.h"
-
+#include "NeuralNetwork.h"
+#ifdef USE_CUDA
+#include "NeuralCuda.h"
+#endif
 class CarGame
 {
 public:
@@ -25,8 +28,15 @@ public:
     static NeuralNetworkEigen *globalBestNetwork;
     void InitBuffers();
     void Render(glm::mat4 proj, glm::mat4 mvp);
+    void InitializeCudaNetwork();
 
 private:
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+#ifdef USE_CUDA
+    NeuralCuda *cudaNN;
+#endif
+    std::vector<float> *allInputs;
+    std::vector<float> *allOutputs;
     bool training;
     Vertexarray *va;
     IndexBuffer *ibo;

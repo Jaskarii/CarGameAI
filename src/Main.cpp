@@ -125,7 +125,7 @@ void InitControls()
 	// std::vector<int> layers = {5, 20, 20, 20, 4};
 	std::vector<int> layers = {5, 20, 20, 20, 2};
 	CarGame::InitBestNetwork(layers);
-	mainGame = new CarGame(200, true, false);
+	mainGame = new CarGame(600, true, false);
 	mainGame->InitBuffers();
 	setCameraTo(glm::vec2(0, 0));
 }
@@ -168,7 +168,7 @@ void StartGameThreads()
 	// Create game instances
 	for (int i = 0; i < numGames; ++i)
 	{
-		games.emplace_back(300, true, false);
+		games.emplace_back(600, true, false);
 	}
 
 	for (int i = 0; i < games.size(); i++)

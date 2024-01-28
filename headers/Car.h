@@ -50,10 +50,11 @@ public:
     CarVertex GetStatus();
     void SetCamera(bool isCam);
     InputSpace *getInputs();
-    void GetAndHandleOutPuts(NeuralNetworkEigen *network);
+    void GetAndHandleOutPuts(NeuralNetworkEigen *network, std::vector<float> *NNinputs);
     int CurrentPathIndex = 1;
     bool isTraining = true;
     bool hasAdvanced = true;
+    int carIndex;
 
 private:
     void PreRender();
