@@ -6,7 +6,7 @@ __global__ void FeedForwardKernel(float *inputs, float *weights, float *outputs,
 {
     int networkId = blockIdx.x;
 
-    const int layerSizes[] = {20, 20, 20, 2};
+    const int layerSizes[] = {32, 32, 32, 2};
     const int numLayers = sizeof(layerSizes) / sizeof(layerSizes[0]);
 
     int inputStartIndex = networkId * inputSize;
@@ -73,6 +73,12 @@ NeuralCuda::NeuralCuda(const std::vector<int> &layerSizes, int cars)
     this->amountOfCars = cars;
     this->layerSizes = layerSizes;
     this->numLayers = layerSizes.size();
+    this->totalWeights = 0;
+    for (size_t i = 0; i < layerSizes.size() - 1; i++)
+    {
+        this->totalWeights += layerSizes[i] * layerSizes[i + 1];
+    }
+
     AllocateMemory();
 }
 
@@ -88,14 +94,14 @@ void NeuralCuda::AllocateMemory()
     cudaMalloc(&d_outputs, sizeof(float) * amountOfCars * layerSizes.back()); // layerSizes.back() is the size of the output layer
 
     // Calculate the total number of weights, excluding the input layer
-    size_t totalWeights = 0;
+    this->totalWeights = 0;
     for (int i = 0; i < numLayers - 1; i++)
     {
-        totalWeights += layerSizes[i] * layerSizes[i + 1];
+        this->totalWeights += layerSizes[i] * layerSizes[i + 1];
     }
 
     // Allocate memory for weights
-    cudaMalloc(&d_weights, sizeof(float) * totalWeights * amountOfCars);
+    cudaMalloc(&d_weights, sizeof(float) * this->totalWeights * amountOfCars);
 
     // Allocate and copy layerSizes
     cudaMalloc(&d_layerSizes, sizeof(int) * numLayers);
@@ -127,13 +133,13 @@ void NeuralCuda::FeedForward(std::vector<float> &outputVec)
     // dim3 gridSize(1, 1);  // Only 1 block along both x and y axes for 1 car
 
     // Assuming the largest layer has 20 neurons
-    int threadsPerBlock = 20;     // or a multiple of 32 for warp alignment, like 32
+    int threadsPerBlock = 32;     // or a multiple of 32 for warp alignment, like 32
     int numBlocks = amountOfCars; // one block per network
 
     // Calculate shared memory size if used
-    int sharedMemorySize = sizeof(float) * 20; // maxLayerSize is the size of the largest layer
+    int sharedMemorySize = sizeof(float) * 32; // maxLayerSize is the size of the largest layer
 
-    FeedForwardKernel<<<numBlocks, threadsPerBlock, sharedMemorySize>>>(d_inputs, d_weights, d_outputs, 5, 2, 940);
+    FeedForwardKernel<<<numBlocks, threadsPerBlock, sharedMemorySize>>>(d_inputs, d_weights, d_outputs, layerSizes[0], layerSizes.back(), this->totalWeights);
 
     // Assuming the output size is known and fixed (e.g., 300 * 2)
     std::vector<float> outputs(amountOfCars * 2);

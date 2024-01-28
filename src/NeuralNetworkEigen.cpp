@@ -12,10 +12,6 @@ NeuralNetworkEigen::NeuralNetworkEigen(const std::vector<int> &layers)
 
 void NeuralNetworkEigen::CopyWeights(const NeuralNetworkEigen *copyFrom)
 {
-    if (!copyFrom)
-        return; // Check for null pointer
-
-    // Ensuring that the number of layers and their sizes match
     if (this->layers.size() != copyFrom->layers.size())
     {
         throw std::runtime_error("Layer size mismatch between neural networks.");
@@ -29,7 +25,6 @@ void NeuralNetworkEigen::CopyWeights(const NeuralNetworkEigen *copyFrom)
         }
     }
 
-    // Copying weights
     this->weights.clear(); // Clear current weights
     for (const auto &weightMatrix : copyFrom->weights)
     {

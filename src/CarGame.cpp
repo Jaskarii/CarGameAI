@@ -14,7 +14,7 @@ CarGame::CarGame(int amountOfCars, bool isTraining, bool isControl) : training(i
     road = new Road();
 
     // std::vector<int> layers = 20, 4};
-    std::vector<int> layers = {5, 20, 20, 20, 2};
+    std::vector<int> layers = {5, 32, 32, 32, 2};
 #ifdef USE_CUDA
     cudaNN = new NeuralCuda(layers, amountOfCars);
 #endif

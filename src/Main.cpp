@@ -123,7 +123,7 @@ void InitControls()
 	Road::GenerateRandomPoints();
 	renderer = new Renderer();
 	// std::vector<int> layers = {5, 20, 20, 20, 4};
-	std::vector<int> layers = {5, 20, 20, 20, 2};
+	std::vector<int> layers = {5, 32, 32, 32, 2};
 	CarGame::InitBestNetwork(layers);
 	mainGame = new CarGame(600, true, false);
 	mainGame->InitBuffers();

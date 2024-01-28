@@ -31,7 +31,7 @@ void Car::Update()
 {
     if (isCrashed)
     {
-        speed = 0.02f;
+        speed = 0.0f;
     }
 
     inputs.position += glm::fastNormalize(inputs.direction) * speed;
@@ -48,7 +48,7 @@ void Car::Rotate(float angle)
 void Car::Accelerate(float acc)
 {
     speed += acc;
-    speed = std::min(speed, 2.0f);
+    speed = std::min(speed, 4.0f);
     speed = std::max(speed, 0.0f);
 }
 
@@ -132,7 +132,7 @@ void Car::GetAndHandleOutPuts(NeuralNetworkEigen *network, std::vector<float> *N
     NNinputs->at(5 * carIndex + 1) = relativeAngle;
     NNinputs->at(5 * carIndex + 2) = distanceToNext;
     NNinputs->at(5 * carIndex + 3) = normalizeDistanceFromRoad;
-    NNinputs->at(5 * carIndex + 4) = speed / 2.0f;
+    NNinputs->at(5 * carIndex + 4) = speed / 4.0f;
 #else
     // Non-CUDA code
 
@@ -141,7 +141,7 @@ void Car::GetAndHandleOutPuts(NeuralNetworkEigen *network, std::vector<float> *N
         relativeAngle,
         distanceToNext,
         normalizeDistanceFromRoad,
-        speed / 2.0f;
+        speed / 4.0f;
     Eigen::VectorXf outPuts = network->FeedForward(inputVector);
     Accelerate(outPuts[0] / 40.0f);
     Rotate(outPuts[1] / 30.0f);

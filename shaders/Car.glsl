@@ -91,7 +91,7 @@ void main(){
     vec4 triangleColor=vec4(0.,1.,0.,1.);// Green for triangle
     vec4 fillColor=vec4(1.,0.,0.,1.);// Red for fill
     
-    float fillFactor=fSpeed/2.;// Assuming max speed is 3.0
+    float fillFactor=fSpeed/4.;// Assuming max speed is 3.0
     float edgeSoftness=2;// Adjust for softer/harder edges
     
     // Calculate distances to each edge
