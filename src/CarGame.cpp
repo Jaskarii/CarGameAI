@@ -68,8 +68,7 @@ void CarGame::GameLoop()
     for (int i = 0; i < cars->size(); i++)
     {
         Car &car = cars->at(i);
-        car.Update();
-        road->UpdateCarStatus(&car);
+        road->UpdateCarStatus(&car, allInputs);
 
         if (maxY < car.getInputs()->position.y)
         {
@@ -96,6 +95,20 @@ void CarGame::GameLoop()
 #ifdef USE_CUDA
     cudaNN->SetInputs(*allInputs);
     cudaNN->FeedForward(*allOutputs);
+#else
+    for (size_t carIndex = 0; carIndex < cars->size(); ++carIndex)
+    {
+        // Map the next 5 elements for this car's input
+        Eigen::VectorXf carInput = Eigen::Map<Eigen::VectorXf>(&((*allInputs)[carIndex * 5]), 5);
+
+        // Feed forward
+        Eigen::VectorXf carOutput = networks->at(carIndex).FeedForward(carInput);
+
+        // Copy the data to the output array
+        std::copy_n(carOutput.data(), carOutput.size(), &((*allOutputs)[carIndex * 2]));
+    }
+#endif
+
     size_t outputIndex = 0;
     for (int i = 0; i < cars->size(); i++)
     {
@@ -108,7 +121,6 @@ void CarGame::GameLoop()
         car.Accelerate(outPut1 / 40);
         car.Rotate(outPut2 / 30);
     }
-#endif
 
     // end = std::chrono::high_resolution_clock::now();
     // add_vectors_duration = end - start;
@@ -137,7 +149,7 @@ void CarGame::Reset()
     for (int i = 0; i < cars->size(); i++)
     {
         cars->at(i).Reset();
-        road->InitNewPathSegment(&(cars->at(i)), 1);
+        road->InitNewPathSegment(&(cars->at(i)), allInputs, 1);
     }
 }
 
@@ -224,7 +236,6 @@ void CarGame::Render(glm::mat4 proj, glm::mat4 mvp)
 
     for (int i = 0; i < cars->size(); i++)
     {
-        cars->at(i).Update();
         carVertices[i] = cars->at(i).GetStatus();
     }
     carVertices[maxYIndex].isCamera = 1;

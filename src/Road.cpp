@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include "../Libraries/include/glm/gtx/fast_square_root.hpp"
 
 static std::vector<glm::vec2> roadPoints;
 
@@ -75,36 +76,61 @@ void Road::Render(glm::mat4 MVP)
 	}
 }
 
-void Road::UpdateCarStatus(Car *car)
+void Road::UpdateCarStatus(Car *car, std::vector<float> *NNinputs)
 {
 	InputSpace *inputs = car->getInputs();
+
+	if (car->IsCrashed())
+	{
+		return;
+	}
+
+	int carIndex = car->carIndex;
 	int currentIndex = car->CurrentPathIndex;
 	float distance1 = DistanceToLineSegment(inputs->position, positions[currentIndex], positions[currentIndex - 1]);
 	float distance2 = DistanceToLineSegment(inputs->position, positions[currentIndex], positions[currentIndex + 1]);
-	float distancetoNextPoint = glm::distance(inputs->position, positions[currentIndex]);
-	inputs->distanceToNextPoint = distancetoNextPoint;
 
 	float absDistance1 = std::abs(distance1);
 	float absDistance2 = std::abs(distance2);
-
+	float distFromRoad = 0;
 	if ((absDistance2 < width))
 	{
 		car->CurrentPathIndex++;
 		currentIndex++;
-		InitNewPathSegment(car, currentIndex);
-		inputs->distanceFromRoad = distance2;
+		InitNewPathSegment(car, NNinputs, currentIndex);
+		distFromRoad = distance2 / 100.0f;
 	}
 	else
 	{
-		inputs->distanceFromRoad = distance1;
+		distFromRoad = distance1 / 100.0f;
 	}
 
+	float distancetoNextPoint = glm::distance(inputs->position, positions[currentIndex]);
+
 	car->SetCrashed(std::min(absDistance1, absDistance2) > width);
+	inputs->position += glm::fastNormalize(inputs->direction) * inputs->speed;
+	float relativeAngle = car->calculateRelativeAngle();
+	relativeAngle = relativeAngle / 3.0f;
+	relativeAngle = std::max(relativeAngle, -1.0f);
+	relativeAngle = std::min(relativeAngle, 1.0f);
+
+	// hasAdvanced > 0.5f;
+	distancetoNextPoint = std::min(1.0f, distancetoNextPoint / 600.0f);
+	distFromRoad *= 0.01f;
+
+	distFromRoad = std::max(distFromRoad, -1.0f);
+	distFromRoad = std::min(distFromRoad, 1.0f);
+
+	NNinputs->at(5 * carIndex + 1) = relativeAngle;
+	NNinputs->at(5 * carIndex + 2) = distancetoNextPoint;
+	NNinputs->at(5 * carIndex + 3) = distFromRoad;
+	NNinputs->at(5 * carIndex + 4) = inputs->speed / 6.0f;
 }
 
-void Road::InitNewPathSegment(Car *car, int ctPathIndex)
+void Road::InitNewPathSegment(Car *car, std::vector<float> *NNinputs, int ctPathIndex)
 {
 	InputSpace *inputs = car->getInputs();
+	int carIndex = car->carIndex;
 	glm::vec2 roadDir;
 	roadDir.x = positions[ctPathIndex].x - positions[ctPathIndex - 1].x;
 	roadDir.y = positions[ctPathIndex].y - positions[ctPathIndex - 1].y;
@@ -121,6 +147,7 @@ void Road::InitNewPathSegment(Car *car, int ctPathIndex)
 	relativeCornerAngle = relativeCornerAngle / 3.0f;
 	relativeCornerAngle = std::max(relativeCornerAngle, -1.0f);
 	relativeCornerAngle = std::min(relativeCornerAngle, 1.0f);
+	NNinputs->at(5 * carIndex) = relativeCornerAngle;
 	inputs->angleOfNextIntersection = relativeCornerAngle;
 }
 

@@ -2,7 +2,6 @@
 #include <cmath>
 #include <iostream>
 #include "Road.h"
-#include "../Libraries/include/glm/gtx/fast_square_root.hpp"
 #include "../Libraries/include/glm/gtx/rotate_vector.hpp"
 
 Car::Car(float posX, float posY)
@@ -27,16 +26,6 @@ void rotateVector(glm::vec2 &v, float angle)
     v.y = v3.y;
 }
 
-void Car::Update()
-{
-    if (isCrashed)
-    {
-        speed = 0.0f;
-    }
-
-    inputs.position += glm::fastNormalize(inputs.direction) * speed;
-}
-
 void Car::Rotate(float angle)
 {
     angle = std::max(angle, -0.3f);
@@ -47,9 +36,9 @@ void Car::Rotate(float angle)
 
 void Car::Accelerate(float acc)
 {
-    speed += acc;
-    speed = std::min(speed, 4.0f);
-    speed = std::max(speed, 0.0f);
+    inputs.speed += acc;
+    inputs.speed = std::min(inputs.speed, 6.0f);
+    inputs.speed = std::max(inputs.speed, 0.0f);
 }
 
 void Car::SetCrashed(bool crashed)
@@ -78,7 +67,7 @@ void Car::Reset()
     inputs.nextPoint.y = 200;
     inputs.nextPointAfter.x = 100;
     inputs.nextPointAfter.y = 300;
-    speed = 0;
+    inputs.speed = 0;
     CurrentPathIndex = 1;
     isCrashed = false;
     previousPathIndex = 1;
@@ -93,7 +82,7 @@ CarVertex Car::GetStatus()
     carStatus.dirY = inputs.direction.y;
     carStatus.posX = inputs.position.x;
     carStatus.posY = inputs.position.y;
-    carStatus.speed = speed;
+    carStatus.speed = inputs.speed;
     return carStatus;
 }
 
@@ -112,40 +101,6 @@ float maxrelativeAngle, minrelativeAngle, maxDistane, minDistance, MaxnormalizeD
 
 void Car::GetAndHandleOutPuts(NeuralNetworkEigen *network, std::vector<float> *NNinputs)
 {
-    float relativeAngle = calculateRelativeAngle();
-    relativeAngle = relativeAngle / 3.0f;
-    relativeAngle = std::max(relativeAngle, -1.0f);
-    relativeAngle = std::min(relativeAngle, 1.0f);
-    float advanced = prevDistance - inputs.distanceToNextPoint;
-
-    // hasAdvanced > 0.5f;
-    prevDistance = inputs.distanceToNextPoint;
-    float distanceToNext = inputs.distanceToNextPoint / 600.0f;
-    distanceToNext = std::min(1.0f, distanceToNext);
-    float normalizeDistanceFromRoad = inputs.distanceFromRoad / 100.0f;
-
-    normalizeDistanceFromRoad = std::max(normalizeDistanceFromRoad, -1.0f);
-    normalizeDistanceFromRoad = std::min(normalizeDistanceFromRoad, 1.0f);
-
-#ifdef USE_CUDA
-    NNinputs->at(5 * carIndex) = inputs.angleOfNextIntersection;
-    NNinputs->at(5 * carIndex + 1) = relativeAngle;
-    NNinputs->at(5 * carIndex + 2) = distanceToNext;
-    NNinputs->at(5 * carIndex + 3) = normalizeDistanceFromRoad;
-    NNinputs->at(5 * carIndex + 4) = speed / 4.0f;
-#else
-    // Non-CUDA code
-
-    Eigen::VectorXf inputVector(5);
-    inputVector << inputs.angleOfNextIntersection,
-        relativeAngle,
-        distanceToNext,
-        normalizeDistanceFromRoad,
-        speed / 4.0f;
-    Eigen::VectorXf outPuts = network->FeedForward(inputVector);
-    Accelerate(outPuts[0] / 40.0f);
-    Rotate(outPuts[1] / 30.0f);
-#endif
 
     if (isTraining)
     {

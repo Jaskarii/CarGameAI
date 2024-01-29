@@ -20,10 +20,10 @@ public:
     static void GenerateRandomPoints();
     void SetNewPath(glm::vec2 pos);
     void Render(glm::mat4 MVP);
-    void UpdateCarStatus(Car *car);
+    void UpdateCarStatus(Car *car, std::vector<float> *NNinputs);
     glm::vec2 *getPositionArray();
     void InitBuffers();
-    void InitNewPathSegment(Car *car, int ctPathIndex);
+    void InitNewPathSegment(Car *car, std::vector<float> *NNinputs, int ctPathIndex);
     void SetWidth(float givenWidth)
     {
         width = givenWidth;

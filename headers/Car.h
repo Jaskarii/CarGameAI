@@ -41,7 +41,6 @@ class Car
 public:
     Car(float posX, float posY);
     ~Car();
-    void Update();
     void Rotate(float angle);
     void Accelerate(float acc);
     void SetCrashed(bool crashed);
@@ -51,6 +50,7 @@ public:
     void SetCamera(bool isCam);
     InputSpace *getInputs();
     void GetAndHandleOutPuts(NeuralNetworkEigen *network, std::vector<float> *NNinputs);
+    float calculateRelativeAngle();
     int CurrentPathIndex = 1;
     bool isTraining = true;
     bool hasAdvanced = true;
@@ -58,9 +58,7 @@ public:
 
 private:
     void PreRender();
-    float calculateRelativeAngle();
     CarVertex carStatus;
-    float speed = 0;
     bool isCrashed = false;
     float prevDistance = 0;
     int previousPathIndex = 1;

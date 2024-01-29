@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 
 project(MyOpenGL)
 
-option(USE_CUDA "Enable CUDA support" ON)
+option(USE_CUDA "Enable CUDA support" OFF)
 
 if(USE_CUDA)
     add_definitions(-DUSE_CUDA)
