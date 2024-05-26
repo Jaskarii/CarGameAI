@@ -12,3 +12,4 @@ For next generation, top 20 networks are retained and passed for all the rest wi
 
 NOTE!
 This approach for training is the most unefficient imaginable. Assessing and updating weights should be done frame by frame basis.
+Application should compile on Windows and Linux. May still require some changes to Cmake in some enviroments. Should make it more robust in the future.
